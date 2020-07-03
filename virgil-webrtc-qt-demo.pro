@@ -6,13 +6,16 @@ TARGET = virgil-webrtc-demo
 DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += \
-    Handler.h
+    include/Handler.h
 
 SOURCES += \
-    main.cpp \
-    Handler.cpp
+    src/main.cpp \
+    src/Handler.cpp
 
-RESOURCES += qml.qrc
+RESOURCES += \
+    src/ui/qml.qrc
+
+INCLUDEPATH += include
 
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
