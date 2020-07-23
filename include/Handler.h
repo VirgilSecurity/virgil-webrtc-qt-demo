@@ -3,22 +3,21 @@
 
 #include <QObject>
 
-class Handler : public QObject
-{
-    Q_OBJECT
+class Handler : public QObject {
+  Q_OBJECT
 
 public:
-    explicit Handler(QObject *parent);
-    ~Handler() = default;
+  explicit Handler(QObject *parent);
+  ~Handler() = default;
 
-    Q_INVOKABLE void call();
-    Q_INVOKABLE void answer();
+  Q_INVOKABLE void call();
+  Q_INVOKABLE void answer();
 
-signals:
-    void messageLogged(const QString &);
+Q_SIGNALS:
+  void messageLogged(const QString &);
 
 private:
-    void logMessage(const QString &message);
+  void logMessage(const QString &message);
 };
 
 #endif // HANDLER_H
