@@ -1,16 +1,31 @@
 QT += quick
 
-CONFIG += c++14 qtquickcompiler no_keywords
+CONFIG += c++17 qtquickcompiler no_keywords
 TARGET = virgil-webrtc-demo
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += \
-    include/Handler.h
+    include/Handler.h \
+    include/voip/Call.h \
+    include/voip/CallConnectionFactory.h \
+    include/voip/CallError.h \
+    include/voip/CallException.h \
+    include/voip/CallOffer.h \
+    include/voip/CallSignalingMessage.h \
+    include/voip/OutgoingCall.h \
+    src/voip/Observers.h
 
 SOURCES += \
     src/main.cpp \
-    src/Handler.cpp
+    src/Handler.cpp \
+    src/voip/Call.cpp \
+    src/voip/CallConnectionFactory.cpp \
+    src/voip/CallException.cpp \
+    src/voip/CallOffer.cpp \
+    src/voip/CallSignalingMessage.cpp \
+    src/voip/Observers.cpp \
+    src/voip/OutgoingCall.cpp
 
 RESOURCES += \
     src/ui/qml.qrc

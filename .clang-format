@@ -20,6 +20,7 @@ MaxEmptyLinesToKeep: 2
 AlwaysBreakAfterReturnType: All
 SortIncludes: false
 BreakBeforeBraces: Custom
+AllowShortLambdasOnASingleLine: None
 BraceWrapping:
   AfterClass:      false
   AfterControlStatement: false
