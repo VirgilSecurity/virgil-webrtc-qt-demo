@@ -20,3 +20,19 @@ std::unique_ptr<CallOffer>
 CallOffer::fromJson(const QJsonObject &json) {
     return nullptr;
 }
+
+QUuid CallOffer::callUUID() const noexcept {
+    return m_callUUID;
+}
+
+QDateTime CallOffer::date() const noexcept {
+    return m_date;
+}
+
+QString CallOffer::caller() const noexcept {
+    return m_caller;
+}
+
+QString CallOffer::sdp() const noexcept {
+    return m_sdp;
+}

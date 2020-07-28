@@ -13,17 +13,18 @@ namespace voip {
 
 class CallException : public std::runtime_error {
 public:
-    template <typename T>
+    template <typename SmartPointerType>
     static void
-    throwIfNull(rtc::scoped_refptr<T> refptr, CallError callError, const std::string &details = "") {
-        if (refptr.get() == nullptr) {
+    throwIfNull(const SmartPointerType &ptr, CallError callError, const std::string &details = "") {
+        if (ptr.get() == nullptr) {
             throw CallException(callError, details);
         }
     }
 
     explicit CallException(CallError callError, const std::string &details = "");
 
-    CallError error() const noexcept;
+    CallError
+    error() const noexcept;
 
 private:
     CallError m_callError;

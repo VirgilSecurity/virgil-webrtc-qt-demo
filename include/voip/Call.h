@@ -15,6 +15,25 @@
 namespace virgil {
 namespace voip {
 
+enum class CallPhase {
+    initial,  // the call was initiated
+    calling,  // the call was initiated, but the caller is not available for now
+    ringing,  // the caller is hearing the call
+    accepted, // the caller has been accepted the call
+    ended,    // call was ended
+    failed
+};
+
+enum class CallConnectionStatus {
+    none,         // Connection was not initiated yet
+    initial,      // the call was initiated
+    negotiating,  // esteblish connection parameters
+    connected,    // connection stable
+    disconnected, // temporary disconnected
+    closed,       // connection was closed by one of the parties
+    failed        // could not connect
+};
+
 /**
  * Base class for IncomingCall and OutgoingCall.
  */
@@ -51,7 +70,7 @@ public:
     otherName() const noexcept;
 
     std::optional<QDateTime>
-    createdAt() const noexcept;
+    connectedAt() const noexcept;
 
 public:
     virtual void
@@ -76,6 +95,9 @@ Q_SIGNALS:
     void
     createdSignalingMessage(const CallSignalingMessage &message);
 
+    void
+    phaseChanged(CallPhase callPhase);
+
 protected:
     /**
      *  Return defined peer contection or throws 'CallError::NoPeerConnection' otherwise.
@@ -89,12 +111,16 @@ protected:
     const rtc::scoped_refptr<webrtc::PeerConnectionInterface>
     peerConnection() const;
 
+    void
+    changePhase(CallPhase newPhase);
+
 private:
     QUuid m_uuid;
     QString m_myName;
     QString m_otherName;
 
-    std::optional<QDateTime> m_createdAt;
+    CallPhase m_phase;
+    std::optional<QDateTime> m_connectedAt;
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection;
 };
 

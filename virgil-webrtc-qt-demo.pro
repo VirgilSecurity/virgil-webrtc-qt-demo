@@ -8,6 +8,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 HEADERS += \
     include/Handler.h \
     include/voip/Call.h \
+    include/voip/CallAnswer.h \
     include/voip/CallConnectionFactory.h \
     include/voip/CallError.h \
     include/voip/CallException.h \
@@ -20,6 +21,7 @@ SOURCES += \
     src/main.cpp \
     src/Handler.cpp \
     src/voip/Call.cpp \
+    src/voip/CallAnswer.cpp \
     src/voip/CallConnectionFactory.cpp \
     src/voip/CallException.cpp \
     src/voip/CallOffer.cpp \

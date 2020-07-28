@@ -9,7 +9,9 @@ enum class CallError {
     FailedToCreateCallOffer,
     FailedToSetLocalOffer,
     FailedToExportSessionDescription,
-    NoPeerConnection
+    FailedToParseSessionDescription,
+    NoPeerConnection,
+    UuidMismatch
 };
 
 } // namespace voip

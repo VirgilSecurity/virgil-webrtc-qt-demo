@@ -4,6 +4,7 @@
 
 #include "voip/Call.h"
 #include "voip/CallError.h"
+#include "voip/CallAnswer.h"
 
 namespace virgil {
 namespace voip {
@@ -17,6 +18,13 @@ public:
 
     void
     start(OnSuccessFunc onSuccess, OnFailureFunc onFailure);
+
+    void
+    accept(const CallAnswer &callAnswer, OnSuccessFunc onSuccess, OnFailureFunc onFailure);
+
+public Q_SLOTS:
+    void
+    remoteDidReceiveCall() noexcept;
 };
 
 

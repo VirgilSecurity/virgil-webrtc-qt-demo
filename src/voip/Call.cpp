@@ -7,7 +7,8 @@
 using namespace virgil::voip;
 
 Call::Call(QObject *parent, QString uuid, QString myName, QString otherName)
-    : QObject(parent), m_uuid(std::move(uuid)), m_myName(std::move(myName)), m_otherName(std::move(otherName)) {
+    : QObject(parent), m_uuid(std::move(uuid)), m_myName(std::move(myName)), m_otherName(std::move(otherName)),
+      m_phase(CallPhase::initial) {
 }
 
 void
@@ -20,6 +21,7 @@ void
 Call::end() noexcept {
     m_peerConnection->Close();
     m_peerConnection = nullptr;
+    m_phase = CallPhase::ended;
 }
 
 void
@@ -81,18 +83,30 @@ Call::peerConnection() const {
     return m_peerConnection;
 }
 
-QUuid Call::uuid() const noexcept {
+void
+Call::changePhase(CallPhase newPhase) {
+    if (newPhase != m_phase) {
+        m_phase = newPhase;
+        Q_EMIT phaseChanged(m_phase);
+    }
+}
+
+QUuid
+Call::uuid() const noexcept {
     return m_uuid;
 }
 
-QString Call::myName() const noexcept {
+QString
+Call::myName() const noexcept {
     return m_myName;
 }
 
-QString Call::otherName() const noexcept {
+QString
+Call::otherName() const noexcept {
     return m_otherName;
 }
 
-std::optional<QDateTime> Call::createdAt() const noexcept {
-    return m_createdAt;
+std::optional<QDateTime>
+Call::connectedAt() const noexcept {
+    return m_connectedAt;
 }
