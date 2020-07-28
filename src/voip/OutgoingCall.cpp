@@ -19,7 +19,14 @@ OutgoingCall::isOutgoing() const noexcept {
 
 void
 OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
-    CallConnectionFactory::sharedInstance().setupPeerConnection(*this);
+
+    try {
+        CallConnectionFactory::sharedInstance().setupPeerConnection(*this);
+
+    } catch (const CallException &callException) {
+        onFailure(callException.error());
+        return;
+    }
 
     auto onCreateOfferSuccess = [this, onSuccess, onFailure](std::unique_ptr<webrtc::SessionDescriptionInterface> sdp) {
         std::string sdpString;
@@ -38,8 +45,8 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         };
 
         auto onSetLocalDescriptionFailure = [onFailure](webrtc::RTCError error) {
-            qDebug() << "Can not set local offer: " << error.message();
-            onFailure(CallError::FailedToSetLocalOffer);
+            qDebug() << "Failed to set an offer session description as local session description: " << error.message();
+            onFailure(CallError::FailedToSetLocalSessionDescription);
         };
 
         auto observer = Observers::makeSetSessionDescriptionObserver(
@@ -49,7 +56,7 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
     };
 
     auto onCreateOfferFailure = [=](webrtc::RTCError error) {
-        qDebug() << "Can not create call offer: " << error.message();
+        qDebug() << "Can not create a call offer: " << error.message();
         onFailure(CallError::FailedToCreateCallOffer);
     };
 
@@ -79,8 +86,8 @@ OutgoingCall::accept(const CallAnswer &callAnswer, OnSuccessFunc onSuccess, OnFa
     }
 
     auto onSetRemoteDescriptionFailure = [onFailure](webrtc::RTCError error) {
-        qDebug() << "Can not set local offer: " << error.message();
-        onFailure(CallError::FailedToSetLocalOffer);
+        qDebug() << "Failed to set an answer session description as remote session description: " << error.message();
+        onFailure(CallError::FailedToSetRemoteSessionDescription);
     };
 
     auto observer = Observers::makeSetSessionDescriptionObserver(

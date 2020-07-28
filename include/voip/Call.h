@@ -45,7 +45,7 @@ public:
     using OnFailureFunc = std::function<void(CallError error)>;
 
 
-    Call(QObject *parent, QString uuid, QString myName, QString otherName);
+    Call(QObject *parent, QUuid uuid, QString myName, QString otherName);
     virtual ~Call() = default;
 
     virtual bool

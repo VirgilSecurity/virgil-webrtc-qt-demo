@@ -10,6 +10,8 @@ namespace virgil {
 namespace voip {
 
 class OutgoingCall : public Call {
+    Q_OBJECT
+
 public:
     using Call::Call;
 
@@ -22,7 +24,6 @@ public:
     void
     accept(const CallAnswer &callAnswer, OnSuccessFunc onSuccess, OnFailureFunc onFailure);
 
-public Q_SLOTS:
     void
     remoteDidReceiveCall() noexcept;
 };

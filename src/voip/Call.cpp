@@ -6,7 +6,7 @@
 
 using namespace virgil::voip;
 
-Call::Call(QObject *parent, QString uuid, QString myName, QString otherName)
+Call::Call(QObject *parent, QUuid uuid, QString myName, QString otherName)
     : QObject(parent), m_uuid(std::move(uuid)), m_myName(std::move(myName)), m_otherName(std::move(otherName)),
       m_phase(CallPhase::initial) {
 }

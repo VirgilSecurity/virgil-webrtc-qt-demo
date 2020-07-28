@@ -7,7 +7,9 @@ namespace voip {
 enum class CallError {
     FailedToConfigurePeerConnection,
     FailedToCreateCallOffer,
-    FailedToSetLocalOffer,
+    FailedToCreateCallAnswer,
+    FailedToSetLocalSessionDescription,
+    FailedToSetRemoteSessionDescription,
     FailedToExportSessionDescription,
     FailedToParseSessionDescription,
     NoPeerConnection,
