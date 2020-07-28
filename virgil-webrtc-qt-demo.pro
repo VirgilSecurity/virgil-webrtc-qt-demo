@@ -14,6 +14,7 @@ HEADERS += \
     include/voip/CallException.h \
     include/voip/CallOffer.h \
     include/voip/CallSignalingMessage.h \
+    include/voip/IceCandidate.h \
     include/voip/IncomingCall.h \
     include/voip/OutgoingCall.h \
     src/voip/Observers.h
@@ -27,6 +28,7 @@ SOURCES += \
     src/voip/CallException.cpp \
     src/voip/CallOffer.cpp \
     src/voip/CallSignalingMessage.cpp \
+    src/voip/IceCandidate.cpp \
     src/voip/IncomingCall.cpp \
     src/voip/Observers.cpp \
     src/voip/OutgoingCall.cpp

@@ -21,17 +21,17 @@ enum class CallPhase {
     ringing,  // the caller is hearing the call
     accepted, // the caller has been accepted the call
     ended,    // call was ended
-    failed
+    failed,
 };
 
-enum class CallConnectionStatus {
+enum class CallConnectionState {
     none,         // Connection was not initiated yet
     initial,      // the call was initiated
-    negotiating,  // esteblish connection parameters
+    connecting,   // esteblish connection parameters
     connected,    // connection stable
     disconnected, // temporary disconnected
+    failed,       // could not connect
     closed,       // connection was closed by one of the parties
-    failed        // could not connect
 };
 
 /**
@@ -98,6 +98,9 @@ Q_SIGNALS:
     void
     phaseChanged(CallPhase callPhase);
 
+    void
+    connectionStateChanged(CallConnectionState callConnectionState);
+
 protected:
     /**
      *  Return defined peer contection or throws 'CallError::NoPeerConnection' otherwise.
@@ -112,7 +115,10 @@ protected:
     peerConnection() const;
 
     void
-    changePhase(CallPhase newPhase);
+    changePhase(CallPhase newPhase) noexcept;
+
+    void
+    changeConnectionState(CallConnectionState newState) noexcept;
 
 private:
     QUuid m_uuid;
@@ -120,6 +126,8 @@ private:
     QString m_otherName;
 
     CallPhase m_phase;
+    CallConnectionState m_connectionState;
+
     std::optional<QDateTime> m_connectedAt;
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection;
 };
