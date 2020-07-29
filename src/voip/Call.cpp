@@ -20,6 +20,25 @@ Call::setupPeerConnection(rtc::scoped_refptr<webrtc::PeerConnectionInterface> pe
 }
 
 void
+Call::addRemoteIceCandidate(const IceCandidate &iceCandidate) {
+
+    webrtc::SdpParseError error = {};
+
+    auto sdpMid = iceCandidate.sdpMid().toStdString();
+    auto sdpMLineIndex = iceCandidate.sdpMLineIndex();
+    auto sdpString = iceCandidate.sdp().toStdString();
+
+    std::unique_ptr<webrtc::IceCandidateInterface> webrtcIceCandidate{
+            webrtc::CreateIceCandidate(sdpMid, sdpMLineIndex, sdpString, &error)};
+
+    if (webrtcIceCandidate.get() != nullptr) {
+        this->peerConnection()->AddIceCandidate(webrtcIceCandidate.get());
+    } else {
+        qWarning() << "Failed to parse ice candidate: " << QString::fromStdString(error.description);
+    }
+}
+
+void
 Call::end() noexcept {
     m_peerConnection->Close();
     m_peerConnection = nullptr;

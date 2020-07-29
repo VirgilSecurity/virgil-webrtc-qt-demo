@@ -11,6 +11,7 @@
 
 #include "CallError.h"
 #include "CallSignalingMessage.h"
+#include "IceCandidate.h"
 
 namespace virgil {
 namespace voip {
@@ -53,6 +54,9 @@ public:
 
     void
     setupPeerConnection(rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection);
+
+    void
+    addRemoteIceCandidate(const IceCandidate &iceCandidate);
 
     void
     end() noexcept;
