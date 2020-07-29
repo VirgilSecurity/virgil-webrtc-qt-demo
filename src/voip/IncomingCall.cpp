@@ -11,8 +11,8 @@
 
 using namespace virgil::voip;
 
-IncomingCall::IncomingCall(QObject *parent, const CallOffer &callOffer, QString myName)
-    : Call(parent, callOffer.callUUID(), std::move(myName), callOffer.caller()), m_sdpString(callOffer.sdp()) {
+IncomingCall::IncomingCall(const CallOffer &callOffer, QString myName)
+    : Call(callOffer.callUUID(), std::move(myName), callOffer.caller()), m_sdpString(callOffer.sdp()) {
 }
 
 

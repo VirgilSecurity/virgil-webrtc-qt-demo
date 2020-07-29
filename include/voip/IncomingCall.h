@@ -13,7 +13,7 @@ class IncomingCall : public Call {
     Q_OBJECT
 
 public:
-    IncomingCall(QObject *parent, const CallOffer& callOffer, QString myName);
+    IncomingCall(const CallOffer& callOffer, QString myName);
 
     virtual bool
     isOutgoing() const noexcept override;
