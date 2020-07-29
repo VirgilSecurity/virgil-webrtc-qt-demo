@@ -1,5 +1,10 @@
 #include "voip/CallAnswer.h"
 
+#include <QJsonDocument>
+#include <QDebug>
+
+#include "voip/CallException.h"
+
 using namespace virgil::voip;
 
 CallAnswer::CallAnswer(QUuid callUUID, QString sdp)
@@ -8,17 +13,57 @@ CallAnswer::CallAnswer(QUuid callUUID, QString sdp)
 
 QJsonObject
 CallAnswer::toJson() const {
-    return QJsonObject();
+    auto json = QJsonObject();
+
+    json["callUUID"] = m_callUUID.toString();
+    json["sdp"] = m_sdp;
+
+    return json;
 }
 
-std::unique_ptr<CallAnswer>
-CallAnswer::fromJson(const QString &json_string) {
-    return nullptr;
+CallAnswer
+CallAnswer::fromJson(const QString &jsonString) {
+    QJsonParseError error{};
+    auto jsonDocument = QJsonDocument::fromJson(jsonString.toUtf8(), &error);
+
+    if (error.error != QJsonParseError::NoError) {
+        qDebug() << "Failed to parse call answer (invalid JSON): " << error.errorString();
+        throw CallException(CallError::FailedToParseCallAnswer);
+    }
+
+    if (!jsonDocument.isObject()) {
+        throw CallException(CallError::FailedToParseCallAnswer);
+    }
+
+    return fromJson(jsonDocument.object());
 }
 
-std::unique_ptr<CallAnswer>
+CallAnswer
 CallAnswer::fromJson(const QJsonObject &json) {
-    return nullptr;
+    //
+    //  callUUID
+    //
+    auto callUUIDValue = json["callUUID"];
+    if (!callUUIDValue.isString()) {
+        throw CallException(CallError::FailedToParseCallAnswer);
+    }
+
+    auto callUUID = QUuid::fromString(callUUIDValue.toString());
+    if (callUUID.isNull()) {
+        throw CallException(CallError::FailedToParseCallAnswer);
+    }
+
+    //
+    //  sdp
+    //
+    auto sdpValue = json["sdp"];
+    if (!sdpValue.isString()) {
+        throw CallException(CallError::FailedToParseCallAnswer);
+    }
+
+    auto sdp = sdpValue.toString();
+
+    return CallAnswer(std::move(callUUID), std::move(sdp));
 }
 
 QUuid CallAnswer::callUUID() const noexcept {

@@ -20,10 +20,10 @@ public:
     virtual QJsonObject
     toJson() const override;
 
-    static std::unique_ptr<IceCandidate>
-    fromJson(const QString &json_string);
+    static IceCandidate
+    fromJson(const QString &jsonString);
 
-    static std::unique_ptr<IceCandidate>
+    static IceCandidate
     fromJson(const QJsonObject &json);
 
     QUuid callUUID() const noexcept;

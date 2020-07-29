@@ -20,10 +20,10 @@ public:
     virtual QJsonObject
     toJson() const override;
 
-    static std::unique_ptr<CallAnswer>
-    fromJson(const QString &json_string);
+    static CallAnswer
+    fromJson(const QString &jsonString);
 
-    static std::unique_ptr<CallAnswer>
+    static CallAnswer
     fromJson(const QJsonObject &json);
 
     QUuid callUUID() const noexcept;

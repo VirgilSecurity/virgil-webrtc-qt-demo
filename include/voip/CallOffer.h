@@ -4,8 +4,6 @@
 #include <QDateTime>
 #include <QUuid>
 
-#include <memory>
-
 #include "CallSignalingMessage.h"
 
 namespace virgil {
@@ -20,19 +18,23 @@ public:
     virtual QJsonObject
     toJson() const override;
 
-    static std::unique_ptr<CallOffer>
-    fromJson(const QString &json_string);
+    static CallOffer
+    fromJson(const QString &jsonString);
 
-    static std::unique_ptr<CallOffer>
+    static CallOffer
     fromJson(const QJsonObject &json);
 
-    QUuid callUUID() const noexcept;
+    QUuid
+    callUUID() const noexcept;
 
-    QDateTime date() const noexcept;
+    QDateTime
+    date() const noexcept;
 
-    QString caller() const noexcept;
+    QString
+    caller() const noexcept;
 
-    QString sdp() const noexcept;
+    QString
+    sdp() const noexcept;
 
 private:
     QUuid m_callUUID;
