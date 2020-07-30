@@ -46,9 +46,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 # WebRTC
-mac: LIBS += -L$$PWD/3rdparty/WebRTC/lib
-mac:release: LIBS += -lwebrtc
-mac:debug: LIBS += -lwebrtc_d
+mac: LIBS += -L$$PWD/3rdparty/WebRTC/lib -lwebrtc
 mac: LIBS += -framework Foundation -framework CoreServices -framework ApplicationServices -framework CoreAudio -framework AudioToolbox
 mac: DEFINES += WEBRTC_MAC WEBRTC_POSIX
 
