@@ -5,6 +5,7 @@ namespace virgil {
 namespace voip {
 
 enum class CallError {
+    FailedToConfigureWebRTC,
     FailedToConfigurePeerConnection,
     FailedToCreateCallOffer,
     FailedToCreateCallAnswer,

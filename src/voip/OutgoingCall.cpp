@@ -37,8 +37,10 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         }
 
         auto onSetLocalDescriptionSuccess = [this, onSuccess, onFailure, sdpString = std::move(sdpString)]() {
-            auto message = CallOffer(
-                    this->uuid(), QDateTime::currentDateTime(), this->myName(), QString::fromStdString(sdpString));
+            auto message = std::make_shared<CallOffer>(this->uuid(),
+                    QDateTime::currentDateTime(),
+                    this->myName(),
+                    QString::fromStdString(sdpString));
 
             Q_EMIT createdSignalingMessage(message);
             onSuccess();
@@ -49,8 +51,8 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
             onFailure(CallError::FailedToSetLocalSessionDescription);
         };
 
-        auto observer = Observers::makeSetSessionDescriptionObserver(
-                std::move(onSetLocalDescriptionSuccess), std::move(onSetLocalDescriptionFailure));
+        auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSetLocalDescriptionSuccess),
+                std::move(onSetLocalDescriptionFailure));
 
         this->peerConnection()->SetLocalDescription(observer.release(), sdp.release());
     };
@@ -60,10 +62,14 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         onFailure(CallError::FailedToCreateCallOffer);
     };
 
-    auto observer = Observers::makeCreateSessionDescriptionObserver(
-            std::move(onCreateOfferSuccess), std::move(onCreateOfferFailure));
+    auto observer = Observers::makeCreateSessionDescriptionObserver(std::move(onCreateOfferSuccess),
+            std::move(onCreateOfferFailure));
 
-    this->peerConnection()->CreateOffer(observer.release(), webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+    auto callOptions = webrtc::PeerConnectionInterface::RTCOfferAnswerOptions();
+
+    callOptions.offer_to_receive_audio = 1;
+
+    this->peerConnection()->CreateOffer(observer.release(), callOptions);
 }
 
 
@@ -90,8 +96,8 @@ OutgoingCall::accept(const CallAnswer &callAnswer, OnSuccessFunc onSuccess, OnFa
         onFailure(CallError::FailedToSetRemoteSessionDescription);
     };
 
-    auto observer = Observers::makeSetSessionDescriptionObserver(
-            std::move(onSuccess), std::move(onSetRemoteDescriptionFailure));
+    auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSuccess),
+            std::move(onSetRemoteDescriptionFailure));
 
     this->peerConnection()->SetRemoteDescription(observer.release(), sessionDescription.release());
 }

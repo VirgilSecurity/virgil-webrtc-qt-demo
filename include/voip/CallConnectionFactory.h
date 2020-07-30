@@ -4,6 +4,7 @@
 #include "voip/Call.h"
 
 #include <webrtc/api/peer_connection_interface.h>
+#include <webrtc/rtc_base/thread_checker.h>
 
 namespace virgil {
 namespace voip {
@@ -14,13 +15,21 @@ public:
     sharedInstance();
 
     void
-    setupPeerConnection(Call &call) const;
+    setupPeerConnection(Call &call) const RTC_RUN_ON(m_thread_checker);
 
 private:
     CallConnectionFactory();
+    ~CallConnectionFactory();
 
 private:
-    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> m_peerConnectionFactory;
+    rtc::ThreadChecker m_thread_checker;
+    webrtc::Mutex m_pc_mutex;
+
+    std::unique_ptr<rtc::Thread> m_network_thread RTC_GUARDED_BY(m_thread_checker);
+    std::unique_ptr<rtc::Thread> m_worker_thread RTC_GUARDED_BY(m_thread_checker);
+    std::unique_ptr<rtc::Thread> m_signaling_thread RTC_GUARDED_BY(m_thread_checker);
+
+    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> m_peerConnectionFactory RTC_GUARDED_BY(m_thread_checker);
 };
 
 } // namespace voip

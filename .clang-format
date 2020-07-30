@@ -12,15 +12,18 @@ DerivePointerAlignment: false
 PointerAlignment: Right
 AlignAfterOpenBracket: DontAlign
 AccessModifierOffset: -4
-AllowAllParametersOfDeclarationOnNextLine: true
-BinPackArguments: true
-BinPackParameters: true
+BinPackArguments: false
+BinPackParameters: false
 AlwaysBreakBeforeMultilineStrings: true
 MaxEmptyLinesToKeep: 2
 AlwaysBreakAfterReturnType: All
 SortIncludes: false
 BreakBeforeBraces: Custom
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
 AllowShortLambdasOnASingleLine: None
+AllowShortBlocksOnASingleLine: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
 BraceWrapping:
   AfterClass:      false
   AfterControlStatement: false

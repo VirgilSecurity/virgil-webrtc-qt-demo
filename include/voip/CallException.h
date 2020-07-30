@@ -21,6 +21,13 @@ public:
         }
     }
 
+    static void
+    throwIfFalse(bool expr, CallError callError, const std::string &details = "") {
+        if (!expr) {
+            throw CallException(callError, details);
+        }
+    }
+
     explicit CallException(CallError callError, const std::string &details = "");
 
     CallError

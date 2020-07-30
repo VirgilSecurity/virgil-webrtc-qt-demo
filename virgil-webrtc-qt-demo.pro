@@ -6,7 +6,7 @@ TARGET = virgil-webrtc-demo
 DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += \
-    include/Handler.h \
+    include/EchoCall.h \
     include/utils/quuid_unordered_map_spec.h \
     include/voip/Call.h \
     include/voip/CallAnswer.h \
@@ -22,8 +22,8 @@ HEADERS += \
     src/voip/Observers.h
 
 SOURCES += \
+    src/EchoCall.cpp \
     src/main.cpp \
-    src/Handler.cpp \
     src/voip/Call.cpp \
     src/voip/CallAnswer.cpp \
     src/voip/CallConnectionFactory.cpp \
@@ -46,8 +46,11 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 # WebRTC
-macx: LIBS += -L$$PWD/3rdparty/WebRTC/lib -lwebrtc -framework Foundation -framework CoreServices -framework ApplicationServices -framework CoreAudio
-macx: DEFINES += WEBRTC_MAC WEBRTC_POSIX
+mac: LIBS += -L$$PWD/3rdparty/WebRTC/lib
+mac:release: LIBS += -lwebrtc
+mac:debug: LIBS += -lwebrtc_d
+mac: LIBS += -framework Foundation -framework CoreServices -framework ApplicationServices -framework CoreAudio -framework AudioToolbox
+mac: DEFINES += WEBRTC_MAC WEBRTC_POSIX
 
 INCLUDEPATH += \
     $$PWD/3rdparty/WebRTC/include \

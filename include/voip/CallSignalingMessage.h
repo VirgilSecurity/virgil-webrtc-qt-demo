@@ -20,8 +20,8 @@ public:
         callUpdate,
         iceCandidate,
     };
-public:
 
+public:
     virtual QJsonObject
     toJson() const = 0;
 

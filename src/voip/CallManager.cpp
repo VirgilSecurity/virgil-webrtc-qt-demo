@@ -44,17 +44,26 @@ CallManager::createIncomingCall(const CallOffer &callOffer) {
 
 void
 CallManager::connectCall(std::shared_ptr<Call> call) {
+
+    qRegisterMetaType<CallPhase>("CallPhase");
+    qRegisterMetaType<CallConnectionState>("CallConnectionState");
+
+
     QObject::connect(call.get(), &Call::phaseChanged, this, [this, call](CallPhase newPhase) {
         Q_EMIT this->callPhaseChanged(call, newPhase);
     });
 
-    QObject::connect(
-            call.get(), &Call::connectionStateChanged, this, [this, call](CallConnectionState newConnectionState) {
+    QObject::connect(call.get(),
+            &Call::connectionStateChanged,
+            this,
+            [this, call](CallConnectionState newConnectionState) {
                 Q_EMIT this->callConnectionStateChanged(call, newConnectionState);
             });
 
-    QObject::connect(call.get(), &Call::createdSignalingMessage, this,
-            [this, call](const CallSignalingMessage &signalingMessage) {
+    QObject::connect(call.get(),
+            &Call::createdSignalingMessage,
+            this,
+            [this, call](std::shared_ptr<CallSignalingMessage> signalingMessage) {
                 Q_EMIT this->createdMessageToSent(signalingMessage);
             });
 }

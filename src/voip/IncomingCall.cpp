@@ -47,8 +47,8 @@ IncomingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         onFailure(CallError::FailedToSetRemoteSessionDescription);
     };
 
-    auto observer = Observers::makeSetSessionDescriptionObserver(
-            std::move(onSuccess), std::move(onSetRemoteDescriptionFailure));
+    auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSuccess),
+            std::move(onSetRemoteDescriptionFailure));
 
     this->peerConnection()->SetRemoteDescription(observer.release(), sessionDescription.release());
 }
@@ -69,7 +69,7 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         }
 
         auto onSetLocalDescriptionSuccess = [this, onSuccess, onFailure, sdpString = std::move(sdpString)]() {
-            auto message = CallAnswer(this->uuid(), QString::fromStdString(sdpString));
+            auto message = std::make_shared<CallAnswer>(this->uuid(), QString::fromStdString(sdpString));
 
             Q_EMIT createdSignalingMessage(message);
             onSuccess();
@@ -80,8 +80,8 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
             onFailure(CallError::FailedToSetLocalSessionDescription);
         };
 
-        auto observer = Observers::makeSetSessionDescriptionObserver(
-                std::move(onSetLocalDescriptionSuccess), std::move(onSetLocalDescriptionFailure));
+        auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSetLocalDescriptionSuccess),
+                std::move(onSetLocalDescriptionFailure));
 
         this->peerConnection()->SetLocalDescription(observer.release(), sdp.release());
     };
@@ -91,8 +91,8 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         onFailure(CallError::FailedToCreateCallAnswer);
     };
 
-    auto observer = Observers::makeCreateSessionDescriptionObserver(
-            std::move(onCreateAnswerSuccess), std::move(onCreateAnswerFailure));
+    auto observer = Observers::makeCreateSessionDescriptionObserver(std::move(onCreateAnswerSuccess),
+            std::move(onCreateAnswerFailure));
 
     this->peerConnection()->CreateAnswer(observer.release(), webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
 }

@@ -41,7 +41,7 @@ Q_SIGNALS:
     callConnectionStateChanged(std::shared_ptr<Call> call, CallConnectionState newConnectionState);
 
     void
-    createdMessageToSent(const CallSignalingMessage& message);
+    createdMessageToSent(std::shared_ptr<CallSignalingMessage> message);
 
 private:
     void

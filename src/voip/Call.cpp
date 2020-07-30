@@ -8,8 +8,12 @@
 using namespace virgil::voip;
 
 Call::Call(QUuid uuid, QString myName, QString otherName)
-    : QObject(), m_uuid(std::move(uuid)), m_myName(std::move(myName)), m_otherName(std::move(otherName)),
-      m_phase(CallPhase::initial), m_connectionState(CallConnectionState::none) {
+    : QObject(),
+      m_uuid(std::move(uuid)),
+      m_myName(std::move(myName)),
+      m_otherName(std::move(otherName)),
+      m_phase(CallPhase::initial),
+      m_connectionState(CallConnectionState::none) {
 }
 
 void
@@ -129,9 +133,13 @@ Call::OnIceCandidate(const webrtc::IceCandidateInterface *candidate) {
     auto sdp = QString::fromStdString(sdpString);
 
 
-    auto iceCandidate = IceCandidate(this->uuid(), candidate->sdp_mline_index(), std::move(sdpMid), std::move(sdp));
+    auto iceCandidate = std::make_shared<IceCandidate>(this->uuid(),
+            candidate->sdp_mline_index(),
+            std::move(sdpMid),
+            std::move(sdp));
 
     Q_EMIT createdSignalingMessage(iceCandidate);
+    Q_EMIT phaseChanged(CallPhase::ringing);
 }
 
 rtc::scoped_refptr<webrtc::PeerConnectionInterface>

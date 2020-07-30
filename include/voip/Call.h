@@ -13,6 +13,7 @@
 #include "CallSignalingMessage.h"
 #include "IceCandidate.h"
 
+
 namespace virgil {
 namespace voip {
 
@@ -97,13 +98,13 @@ public:
 
 Q_SIGNALS:
     void
-    createdSignalingMessage(const CallSignalingMessage &message);
-
-    void
     phaseChanged(CallPhase callPhase);
 
     void
     connectionStateChanged(CallConnectionState callConnectionState);
+
+    void
+    createdSignalingMessage(std::shared_ptr<CallSignalingMessage> message);
 
 protected:
     /**
@@ -138,5 +139,8 @@ private:
 
 } // namespace voip
 } // namespace virgil
+
+Q_DECLARE_METATYPE(virgil::voip::CallPhase)
+Q_DECLARE_METATYPE(virgil::voip::CallConnectionState)
 
 #endif /* VIRGIL_VOIP_CALL_H_INCLUDED */

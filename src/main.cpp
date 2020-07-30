@@ -3,13 +3,13 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 
-#include "Handler.h"
+#include "EchoCall.h"
 
-int main(int argc, char *argv[])
-{
+int
+main(int argc, char *argv[]) {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication app(argc, argv);
-    Handler handler(&app);
+    EchoCall handler(&app);
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("handler", &handler);
