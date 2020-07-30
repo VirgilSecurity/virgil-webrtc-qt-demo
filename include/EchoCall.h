@@ -32,7 +32,10 @@ public Q_SLOTS:
             virgil::voip::CallConnectionState newConnectionState);
 
     void
-    outgoingCreatedMessageToSent(std::shared_ptr<virgil::voip::CallSignalingMessage> message);
+    outgoingCallFailed(std::shared_ptr<virgil::voip::Call> call, virgil::voip::CallError error);
+
+    void
+    outgoingCreatedMessageToSent(virgil::voip::CallSignalingMessage* message);
 
     void
     incomingCallPhaseChanged(std::shared_ptr<virgil::voip::Call> call, virgil::voip::CallPhase newPhase);
@@ -42,15 +45,23 @@ public Q_SLOTS:
             virgil::voip::CallConnectionState newConnectionState);
 
     void
-    incomingCreatedMessageToSent(std::shared_ptr<virgil::voip::CallSignalingMessage> message);
+    incomingCallFailed(std::shared_ptr<virgil::voip::Call> call, virgil::voip::CallError error);
+
+    void
+    incomingCreatedMessageToSent(virgil::voip::CallSignalingMessage* message);
 
 private:
     void
     logMessage(const QString &message);
 
+    void
+    processCallSignalingMessage(virgil::voip::CallManager& callManager,
+        const virgil::voip::CallSignalingMessage& message);
+
 private:
     std::unique_ptr<virgil::voip::CallManager> m_caller;
     std::unique_ptr<virgil::voip::CallManager> m_callee;
+    QUuid m_incomingCallUuid;
 };
 
 #endif

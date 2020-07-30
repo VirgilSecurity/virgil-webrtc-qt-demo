@@ -79,7 +79,7 @@ public:
 
 public:
     virtual void
-    OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
+    OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState newState) override;
 
     virtual void
     OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
@@ -88,10 +88,10 @@ public:
     OnRenegotiationNeeded() override;
 
     virtual void
-    OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState new_state) override;
+    OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState newState) override;
 
     virtual void
-    OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
+    OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState newState) override;
 
     virtual void
     OnIceCandidate(const webrtc::IceCandidateInterface *candidate) override;
@@ -104,7 +104,7 @@ Q_SIGNALS:
     connectionStateChanged(CallConnectionState callConnectionState);
 
     void
-    createdSignalingMessage(std::shared_ptr<CallSignalingMessage> message);
+    createdSignalingMessage(CallSignalingMessage *message);
 
 protected:
     /**

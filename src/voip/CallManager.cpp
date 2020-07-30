@@ -42,12 +42,64 @@ CallManager::createIncomingCall(const CallOffer &callOffer) {
     return incomingCall;
 }
 
+std::shared_ptr<Call>
+CallManager::findCall(const QUuid &uuid) {
+    auto call = m_calls.find(uuid);
+    if (call != m_calls.end()) {
+        return call->second;
+    }
+
+    return nullptr;
+}
+
+
+std::shared_ptr<IncomingCall>
+CallManager::findIncomingCall(const QUuid &uuid) {
+    auto call = m_calls.find(uuid);
+    if (call != m_calls.end() && !call->second->isOutgoing()) {
+        return std::static_pointer_cast<IncomingCall>(call->second);
+    }
+
+    return nullptr;
+}
+
+std::shared_ptr<OutgoingCall>
+CallManager::findOutgoingCall(const QUuid &uuid) {
+    auto call = m_calls.find(uuid);
+    if (call != m_calls.end() && call->second->isOutgoing()) {
+        return std::static_pointer_cast<OutgoingCall>(call->second);
+    }
+
+    return nullptr;
+}
+
+
+void
+CallManager::processCallAnswer(const CallAnswer &callAnswer) {
+    auto call = findOutgoingCall(callAnswer.callUUID());
+    if (call) {
+        call->accept(
+                callAnswer,
+                [] {
+                },
+                [this, call](CallError error) {
+                    Q_EMIT callFailed(call, error);
+                });
+    }
+}
+
+
+void
+CallManager::processIceCandidate(const IceCandidate &iceCandidate) {
+    auto call = findCall(iceCandidate.callUUID());
+    if (call) {
+        call->addRemoteIceCandidate(iceCandidate);
+    }
+}
+
+
 void
 CallManager::connectCall(std::shared_ptr<Call> call) {
-
-    qRegisterMetaType<CallPhase>("CallPhase");
-    qRegisterMetaType<CallConnectionState>("CallConnectionState");
-
 
     QObject::connect(call.get(), &Call::phaseChanged, this, [this, call](CallPhase newPhase) {
         Q_EMIT this->callPhaseChanged(call, newPhase);
@@ -63,7 +115,7 @@ CallManager::connectCall(std::shared_ptr<Call> call) {
     QObject::connect(call.get(),
             &Call::createdSignalingMessage,
             this,
-            [this, call](std::shared_ptr<CallSignalingMessage> signalingMessage) {
+            [this, call](CallSignalingMessage *signalingMessage) {
                 Q_EMIT this->createdMessageToSent(signalingMessage);
             });
 }

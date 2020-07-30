@@ -11,8 +11,20 @@ using namespace virgil::voip;
 static std::string
 stringify(CallError callError) {
     switch (callError) {
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToConfigureWebRTC);
         CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToConfigurePeerConnection);
-        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToCreateCallOffer)
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToCreateCallOffer);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToCreateCallAnswer);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToSetLocalSessionDescription);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToSetRemoteSessionDescription);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToExportSessionDescription);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseSessionDescription);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseCallOffer);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseCallAnswer);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseCallUpdate);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseIceCandidate);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::NoPeerConnection);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::UuidMismatch);
     }
 }
 
@@ -34,6 +46,7 @@ CallException::CallException(CallError callError, const std::string &details)
 }
 
 
-CallError CallException::error() const noexcept {
+CallError
+CallException::error() const noexcept {
     return m_callError;
 }

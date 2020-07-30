@@ -37,7 +37,7 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         }
 
         auto onSetLocalDescriptionSuccess = [this, onSuccess, onFailure, sdpString = std::move(sdpString)]() {
-            auto message = std::make_shared<CallOffer>(this->uuid(),
+            auto message = new CallOffer(this->uuid(),
                     QDateTime::currentDateTime(),
                     this->myName(),
                     QString::fromStdString(sdpString));

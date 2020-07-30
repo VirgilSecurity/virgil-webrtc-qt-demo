@@ -69,7 +69,7 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         }
 
         auto onSetLocalDescriptionSuccess = [this, onSuccess, onFailure, sdpString = std::move(sdpString)]() {
-            auto message = std::make_shared<CallAnswer>(this->uuid(), QString::fromStdString(sdpString));
+            auto message = new CallAnswer(this->uuid(), QString::fromStdString(sdpString));
 
             Q_EMIT createdSignalingMessage(message);
             onSuccess();

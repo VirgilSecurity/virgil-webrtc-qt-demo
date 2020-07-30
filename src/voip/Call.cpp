@@ -65,7 +65,7 @@ Call::hold(bool onHold) noexcept {
 
 void
 Call::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState newState) {
-    qDebug() << "Call::OnSignalingChange()" << (int)newState;
+    qDebug() << "Call::OnSignalingChange() " << m_uuid.toString() << " " << (int)newState;
 }
 
 void
@@ -133,14 +133,11 @@ Call::OnIceCandidate(const webrtc::IceCandidateInterface *candidate) {
     auto sdp = QString::fromStdString(sdpString);
 
 
-    auto iceCandidate = std::make_shared<IceCandidate>(this->uuid(),
-            candidate->sdp_mline_index(),
-            std::move(sdpMid),
-            std::move(sdp));
+    auto iceCandidate = new IceCandidate(this->uuid(), candidate->sdp_mline_index(), std::move(sdpMid), std::move(sdp));
 
     Q_EMIT createdSignalingMessage(iceCandidate);
-    Q_EMIT phaseChanged(CallPhase::ringing);
 }
+
 
 rtc::scoped_refptr<webrtc::PeerConnectionInterface>
 Call::peerConnection() {
