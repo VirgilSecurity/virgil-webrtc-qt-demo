@@ -21,6 +21,11 @@ CallAnswer::toJson() const {
     return json;
 }
 
+CallSignalingMessage::Type
+CallAnswer::type() const noexcept {
+    return CallSignalingMessage::Type::callAnswer;
+}
+
 CallAnswer
 CallAnswer::fromJson(const QString &jsonString) {
     QJsonParseError error{};

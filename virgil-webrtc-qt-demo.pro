@@ -7,11 +7,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += \
     include/Handler.h \
+    include/utils/quuid_unordered_map_spec.h \
     include/voip/Call.h \
     include/voip/CallAnswer.h \
     include/voip/CallConnectionFactory.h \
     include/voip/CallError.h \
     include/voip/CallException.h \
+    include/voip/CallManager.h \
     include/voip/CallOffer.h \
     include/voip/CallSignalingMessage.h \
     include/voip/IceCandidate.h \
@@ -26,6 +28,7 @@ SOURCES += \
     src/voip/CallAnswer.cpp \
     src/voip/CallConnectionFactory.cpp \
     src/voip/CallException.cpp \
+    src/voip/CallManager.cpp \
     src/voip/CallOffer.cpp \
     src/voip/CallSignalingMessage.cpp \
     src/voip/IceCandidate.cpp \

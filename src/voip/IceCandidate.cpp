@@ -24,6 +24,11 @@ IceCandidate::toJson() const {
     return json;
 }
 
+CallSignalingMessage::Type
+IceCandidate::type() const noexcept {
+    return CallSignalingMessage::Type::iceCandidate;
+}
+
 IceCandidate
 IceCandidate::fromJson(const QString &jsonString) {
     QJsonParseError error{};

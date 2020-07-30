@@ -18,6 +18,9 @@ public:
     virtual QJsonObject
     toJson() const override;
 
+    virtual CallSignalingMessage::Type
+    type() const noexcept override;
+
     static CallOffer
     fromJson(const QString &jsonString);
 

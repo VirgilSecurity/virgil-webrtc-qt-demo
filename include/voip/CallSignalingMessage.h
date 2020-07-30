@@ -12,9 +12,21 @@ namespace voip {
  */
 class CallSignalingMessage : public QObject {
     Q_OBJECT
+
 public:
+    enum class Type {
+        callOffer,
+        callAnswer,
+        callUpdate,
+        iceCandidate,
+    };
+public:
+
     virtual QJsonObject
     toJson() const = 0;
+
+    virtual Type
+    type() const = 0;
 
     virtual QString
     toJsonString() const;

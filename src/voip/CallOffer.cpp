@@ -23,6 +23,12 @@ CallOffer::toJson() const {
     return json;
 }
 
+CallSignalingMessage::Type
+CallOffer::type() const noexcept {
+    return CallSignalingMessage::Type::callOffer;
+}
+
+
 CallOffer
 CallOffer::fromJson(const QString &jsonString) {
     QJsonParseError error{};
