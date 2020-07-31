@@ -51,6 +51,7 @@ mac: LIBS += -framework Foundation -framework CoreServices -framework Applicatio
 mac: DEFINES += WEBRTC_MAC WEBRTC_POSIX
 
 INCLUDEPATH += \
+    $$PWD/3rdparty \
     $$PWD/3rdparty/WebRTC/include \
     $$PWD/3rdparty/WebRTC/include/webrtc \
     $$PWD/3rdparty/WebRTC/include/third_party \
