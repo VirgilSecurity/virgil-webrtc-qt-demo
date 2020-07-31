@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <memory>
 
+#include <sigslot/signal.hpp>
+
 #include "Call.h"
 #include "IncomingCall.h"
 #include "OutgoingCall.h"
@@ -21,53 +23,49 @@ class CallOffer;
 class CallAnswer;
 class IceCandidate;
 
-class CallManager : public QObject {
-    Q_OBJECT
-
+class CallManager {
 public:
     CallManager();
 
-    static CallManager&
+    static CallManager &
     sharedInstance();
 
     std::shared_ptr<OutgoingCall>
     createOutgoingCall(QString callee);
 
     std::shared_ptr<IncomingCall>
-    createIncomingCall(const CallOffer& callOffer);
+    createIncomingCall(const CallOffer &callOffer);
 
     std::shared_ptr<Call>
-    findCall(const QUuid& uuid);
+    findCall(const QUuid &uuid);
 
     std::shared_ptr<IncomingCall>
-    findIncomingCall(const QUuid& uuid);
+    findIncomingCall(const QUuid &uuid);
 
     std::shared_ptr<OutgoingCall>
-    findOutgoingCall(const QUuid& uuid);
+    findOutgoingCall(const QUuid &uuid);
 
     void
-    processCallAnswer(const CallAnswer& callAnswer);
+    processCallAnswer(const CallAnswer &callAnswer);
 
     void
-    processIceCandidate(const IceCandidate& iceCandidate);
+    processIceCandidate(const IceCandidate &iceCandidate);
 
+    psigslot::signal<const Call &, CallPhase> callPhaseChanged;
 
-Q_SIGNALS:
-    void
-    callPhaseChanged(std::shared_ptr<Call> call, CallPhase newPhase);
+    psigslot::signal<const Call &, CallConnectionState> callConnectionStateChanged;
 
-    void
-    callConnectionStateChanged(std::shared_ptr<Call> call, CallConnectionState newConnectionState);
+    psigslot::signal<const Call &, CallError> callFailed;
 
-    void
-    callFailed(std::shared_ptr<Call> call, CallError error);
-
-    void
-    createdMessageToSent(CallSignalingMessage* message);
+    psigslot::signal<const Call &, const CallSignalingMessage &> createdMessageToSent;
 
 private:
     void
     connectCall(std::shared_ptr<Call> call);
+
+    //
+    //  Proxy connections.
+    //
 
 
 private:

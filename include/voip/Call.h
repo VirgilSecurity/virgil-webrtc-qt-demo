@@ -8,6 +8,7 @@
 #include <optional>
 
 #include <webrtc/api/peer_connection_interface.h>
+#include <sigslot/signal.hpp>
 
 #include "CallError.h"
 #include "CallSignalingMessage.h"
@@ -39,9 +40,7 @@ enum class CallConnectionState {
 /**
  * Base class for IncomingCall and OutgoingCall.
  */
-class Call : public QObject, public webrtc::PeerConnectionObserver {
-    Q_OBJECT
-
+class Call : public webrtc::PeerConnectionObserver {
 public:
     using OnSuccessFunc = std::function<void()>;
     using OnFailureFunc = std::function<void(CallError error)>;
@@ -96,15 +95,11 @@ public:
     virtual void
     OnIceCandidate(const webrtc::IceCandidateInterface *candidate) override;
 
-Q_SIGNALS:
-    void
-    phaseChanged(CallPhase callPhase);
+    psigslot::signal<CallPhase> phaseChanged;
 
-    void
-    connectionStateChanged(CallConnectionState callConnectionState);
+    psigslot::signal<CallConnectionState> connectionStateChanged;
 
-    void
-    createdSignalingMessage(CallSignalingMessage *message);
+    psigslot::signal<const CallSignalingMessage &> createdSignalingMessage;
 
 protected:
     /**
@@ -139,8 +134,5 @@ private:
 
 } // namespace voip
 } // namespace virgil
-
-Q_DECLARE_METATYPE(virgil::voip::CallPhase)
-Q_DECLARE_METATYPE(virgil::voip::CallConnectionState)
 
 #endif /* VIRGIL_VOIP_CALL_H_INCLUDED */

@@ -12,8 +12,6 @@ namespace virgil {
 namespace voip {
 
 class CallAnswer : public CallSignalingMessage {
-    Q_OBJECT
-
 public:
     CallAnswer(QUuid callUUID, QString sdp);
 

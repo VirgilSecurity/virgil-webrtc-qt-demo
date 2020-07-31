@@ -10,9 +10,7 @@ namespace voip {
 /**
  * Base class for a call signaling messeges.
  */
-class CallSignalingMessage : public QObject {
-    Q_OBJECT
-
+class CallSignalingMessage {
 public:
     enum class Type {
         callOffer,

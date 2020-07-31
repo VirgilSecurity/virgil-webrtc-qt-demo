@@ -37,12 +37,12 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         }
 
         auto onSetLocalDescriptionSuccess = [this, onSuccess, onFailure, sdpString = std::move(sdpString)]() {
-            auto message = new CallOffer(this->uuid(),
+            auto message = CallOffer(this->uuid(),
                     QDateTime::currentDateTime(),
                     this->myName(),
                     QString::fromStdString(sdpString));
 
-            Q_EMIT createdSignalingMessage(message);
+            createdSignalingMessage(message);
             onSuccess();
         };
 

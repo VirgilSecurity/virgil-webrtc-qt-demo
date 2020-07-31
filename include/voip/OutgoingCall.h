@@ -10,8 +10,6 @@ namespace virgil {
 namespace voip {
 
 class OutgoingCall : public Call {
-    Q_OBJECT
-
 public:
     using Call::Call;
 

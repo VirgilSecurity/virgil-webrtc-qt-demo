@@ -10,8 +10,6 @@ namespace virgil {
 namespace voip {
 
 class CallOffer : public CallSignalingMessage {
-    Q_OBJECT
-
 public:
     CallOffer(QUuid callUUID, QDateTime date, QString caller, QString sdp);
 

@@ -12,8 +12,6 @@ namespace virgil {
 namespace voip {
 
 class IceCandidate : public CallSignalingMessage {
-    Q_OBJECT
-
 public:
     IceCandidate(QUuid callUUID, int sdpMLineIndex, QString sdpMid, QString sdp);
 

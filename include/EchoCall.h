@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <voip/CallManager.h>
+#include <sigslot/signal.hpp>
 
 class EchoCall : public QObject {
     Q_OBJECT
@@ -19,44 +20,43 @@ public:
     Q_INVOKABLE void
     answer();
 
+    void
+    outgoingCallPhaseChanged(const virgil::voip::Call &call, virgil::voip::CallPhase newPhase);
+
+    void
+    outgoingCallConnectionStateChanged(const virgil::voip::Call &call,
+            virgil::voip::CallConnectionState newConnectionState);
+
+    void
+    outgoingCallFailed(const virgil::voip::Call &call, virgil::voip::CallError error);
+
+    void
+    outgoingCreatedMessageToSent(const virgil::voip::Call &call, const virgil::voip::CallSignalingMessage &message);
+
+    void
+    incomingCallPhaseChanged(const virgil::voip::Call &call, virgil::voip::CallPhase newPhase);
+
+    void
+    incomingCallConnectionStateChanged(const virgil::voip::Call &call,
+            virgil::voip::CallConnectionState newConnectionState);
+
+    void
+    incomingCallFailed(const virgil::voip::Call &call, virgil::voip::CallError error);
+
+    void
+    incomingCreatedMessageToSent(const virgil::voip::Call &call, const virgil::voip::CallSignalingMessage &message);
+
 Q_SIGNALS:
     void
     messageLogged(const QString &);
-
-public Q_SLOTS:
-    void
-    outgoingCallPhaseChanged(std::shared_ptr<virgil::voip::Call> call, virgil::voip::CallPhase newPhase);
-
-    void
-    outgoingCallConnectionStateChanged(std::shared_ptr<virgil::voip::Call> call,
-            virgil::voip::CallConnectionState newConnectionState);
-
-    void
-    outgoingCallFailed(std::shared_ptr<virgil::voip::Call> call, virgil::voip::CallError error);
-
-    void
-    outgoingCreatedMessageToSent(virgil::voip::CallSignalingMessage* message);
-
-    void
-    incomingCallPhaseChanged(std::shared_ptr<virgil::voip::Call> call, virgil::voip::CallPhase newPhase);
-
-    void
-    incomingCallConnectionStateChanged(std::shared_ptr<virgil::voip::Call> call,
-            virgil::voip::CallConnectionState newConnectionState);
-
-    void
-    incomingCallFailed(std::shared_ptr<virgil::voip::Call> call, virgil::voip::CallError error);
-
-    void
-    incomingCreatedMessageToSent(virgil::voip::CallSignalingMessage* message);
 
 private:
     void
     logMessage(const QString &message);
 
     void
-    processCallSignalingMessage(virgil::voip::CallManager& callManager,
-        const virgil::voip::CallSignalingMessage& message);
+    processCallSignalingMessage(virgil::voip::CallManager &callManager,
+            const virgil::voip::CallSignalingMessage &message);
 
 private:
     std::unique_ptr<virgil::voip::CallManager> m_caller;

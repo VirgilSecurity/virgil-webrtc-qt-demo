@@ -69,9 +69,10 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         }
 
         auto onSetLocalDescriptionSuccess = [this, onSuccess, onFailure, sdpString = std::move(sdpString)]() {
-            auto message = new CallAnswer(this->uuid(), QString::fromStdString(sdpString));
+            auto message = CallAnswer(this->uuid(), QString::fromStdString(sdpString));
 
-            Q_EMIT createdSignalingMessage(message);
+            createdSignalingMessage(message);
+
             onSuccess();
         };
 

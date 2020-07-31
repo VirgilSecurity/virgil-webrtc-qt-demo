@@ -12,36 +12,42 @@ EchoCall::EchoCall(QObject *parent)
     //
     //  Connect Caller.
     //
-    QObject::connect(m_caller.get(), &voip::CallManager::callPhaseChanged, this, &EchoCall::outgoingCallPhaseChanged);
+    m_caller->callPhaseChanged.connect([this](const voip::Call &call, voip::CallPhase phase) {
+        this->outgoingCallPhaseChanged(call, phase);
+    });
 
-    QObject::connect(m_caller.get(),
-            &voip::CallManager::callConnectionStateChanged,
-            this,
-            &EchoCall::outgoingCallConnectionStateChanged);
+    m_caller->callConnectionStateChanged.connect([this](const voip::Call &call, voip::CallConnectionState newState) {
+        this->outgoingCallConnectionStateChanged(call, newState);
+    });
 
-    QObject::connect(m_caller.get(),
-            &voip::CallManager::createdMessageToSent,
-            this,
-            &EchoCall::outgoingCreatedMessageToSent);
+    m_caller->createdMessageToSent.connect(
+            [this](const voip::Call &call, const voip::CallSignalingMessage &signalingMessage) {
+                this->outgoingCreatedMessageToSent(call, signalingMessage);
+            });
 
-    QObject::connect(m_caller.get(), &voip::CallManager::callFailed, this, &EchoCall::outgoingCallFailed);
+    m_caller->callFailed.connect([this](const voip::Call &call, voip::CallError error) {
+        this->outgoingCallFailed(call, error);
+    });
 
     //
     //  Connect Callee.
     //
-    QObject::connect(m_callee.get(), &voip::CallManager::callPhaseChanged, this, &EchoCall::incomingCallPhaseChanged);
+    m_callee->callPhaseChanged.connect([this](const voip::Call &call, voip::CallPhase phase) {
+        this->incomingCallPhaseChanged(call, phase);
+    });
 
-    QObject::connect(m_callee.get(),
-            &voip::CallManager::callConnectionStateChanged,
-            this,
-            &EchoCall::incomingCallConnectionStateChanged);
+    m_callee->callConnectionStateChanged.connect([this](const voip::Call &call, voip::CallConnectionState newState) {
+        this->incomingCallConnectionStateChanged(call, newState);
+    });
 
-    QObject::connect(m_callee.get(),
-            &voip::CallManager::createdMessageToSent,
-            this,
-            &EchoCall::incomingCreatedMessageToSent);
+    m_callee->createdMessageToSent.connect(
+            [this](const voip::Call &call, const voip::CallSignalingMessage &signalingMessage) {
+                this->incomingCreatedMessageToSent(call, signalingMessage);
+            });
 
-    QObject::connect(m_callee.get(), &voip::CallManager::callFailed, this, &EchoCall::incomingCallFailed);
+    m_callee->callFailed.connect([this](const voip::Call &call, voip::CallError error) {
+        this->incomingCallFailed(call, error);
+    });
 }
 
 
@@ -89,55 +95,50 @@ EchoCall::logMessage(const QString &message) {
 }
 
 void
-EchoCall::outgoingCallPhaseChanged(std::shared_ptr<voip::Call> call, voip::CallPhase newPhase) {
+EchoCall::outgoingCallPhaseChanged(const voip::Call &call, voip::CallPhase newPhase) {
     logMessage("EchoCall::outgoingCallPhaseChanged()");
 }
 
 void
-EchoCall::outgoingCallConnectionStateChanged(std::shared_ptr<voip::Call> call,
-        voip::CallConnectionState newConnectionState) {
+EchoCall::outgoingCallConnectionStateChanged(const voip::Call &call, voip::CallConnectionState newConnectionState) {
     logMessage("EchoCall::outgoingCallConnectionStateChanged()");
 }
 
 void
-EchoCall::outgoingCallFailed(std::shared_ptr<voip::Call> call, voip::CallError error) {
+EchoCall::outgoingCallFailed(const voip::Call &call, voip::CallError error) {
     logMessage(QString("EchoCall::outgoingCallFailed() error: %1").arg((int)error));
 }
 
 void
-EchoCall::outgoingCreatedMessageToSent(voip::CallSignalingMessage *message) {
+EchoCall::outgoingCreatedMessageToSent(const voip::Call &call, const voip::CallSignalingMessage &message) {
     logMessage("EchoCall::outgoingCreatedMessageToSent()");
-    EchoCall::processCallSignalingMessage(*m_callee, *message);
-    message->deleteLater();
+    EchoCall::processCallSignalingMessage(*m_callee, message);
 }
 
 void
-EchoCall::incomingCallPhaseChanged(std::shared_ptr<voip::Call> call, voip::CallPhase newPhase) {
+EchoCall::incomingCallPhaseChanged(const voip::Call &call, voip::CallPhase newPhase) {
     logMessage("EchoCall::incomingCallPhaseChanged()");
 }
 
 void
-EchoCall::incomingCallConnectionStateChanged(std::shared_ptr<voip::Call> call,
-        voip::CallConnectionState newConnectionState) {
+EchoCall::incomingCallConnectionStateChanged(const voip::Call &call, voip::CallConnectionState newConnectionState) {
     logMessage("EchoCall::incomingCallConnectionStateChanged()");
 }
 
 void
-EchoCall::incomingCallFailed(std::shared_ptr<voip::Call> call, voip::CallError error) {
+EchoCall::incomingCallFailed(const voip::Call &call, voip::CallError error) {
     logMessage(QString("EchoCall::incomingCallFailed() error: %1").arg((int)error));
 }
 
 void
-EchoCall::incomingCreatedMessageToSent(voip::CallSignalingMessage *message) {
+EchoCall::incomingCreatedMessageToSent(const voip::Call &call, const voip::CallSignalingMessage &message) {
     logMessage("EchoCall::incomingCreatedMessageToSent()");
-    EchoCall::processCallSignalingMessage(*m_caller, *message);
-    message->deleteLater();
+    EchoCall::processCallSignalingMessage(*m_caller, message);
 }
 
 void
 EchoCall::processCallSignalingMessage(virgil::voip::CallManager &callManager,
         const virgil::voip::CallSignalingMessage &signalingMessage) {
-
     switch (signalingMessage.type()) {
     case voip::CallSignalingMessage::Type::callOffer: {
         const auto &callOffer = static_cast<const voip::CallOffer &>(signalingMessage);

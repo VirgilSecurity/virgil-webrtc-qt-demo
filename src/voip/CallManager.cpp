@@ -83,7 +83,7 @@ CallManager::processCallAnswer(const CallAnswer &callAnswer) {
                 [] {
                 },
                 [this, call](CallError error) {
-                    Q_EMIT callFailed(call, error);
+                    callFailed(*call, error);
                 });
     }
 }
@@ -101,21 +101,15 @@ CallManager::processIceCandidate(const IceCandidate &iceCandidate) {
 void
 CallManager::connectCall(std::shared_ptr<Call> call) {
 
-    QObject::connect(call.get(), &Call::phaseChanged, this, [this, call](CallPhase newPhase) {
-        Q_EMIT this->callPhaseChanged(call, newPhase);
+    call->phaseChanged.connect([this, call](CallPhase newPhase) {
+        this->callPhaseChanged(*call, newPhase);
     });
 
-    QObject::connect(call.get(),
-            &Call::connectionStateChanged,
-            this,
-            [this, call](CallConnectionState newConnectionState) {
-                Q_EMIT this->callConnectionStateChanged(call, newConnectionState);
-            });
+    call->connectionStateChanged.connect([this, call](CallConnectionState newConnectionState) {
+        this->callConnectionStateChanged(*call, newConnectionState);
+    });
 
-    QObject::connect(call.get(),
-            &Call::createdSignalingMessage,
-            this,
-            [this, call](CallSignalingMessage *signalingMessage) {
-                Q_EMIT this->createdMessageToSent(signalingMessage);
-            });
+    call->createdSignalingMessage.connect([this, call](const CallSignalingMessage &signalingMessage) {
+        this->createdMessageToSent(*call, signalingMessage);
+    });
 }

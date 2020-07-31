@@ -10,8 +10,6 @@ namespace virgil {
 namespace voip {
 
 class IncomingCall : public Call {
-    Q_OBJECT
-
 public:
     IncomingCall(const CallOffer& callOffer, QString myName);
 

@@ -8,8 +8,7 @@
 using namespace virgil::voip;
 
 Call::Call(QUuid uuid, QString myName, QString otherName)
-    : QObject(),
-      m_uuid(std::move(uuid)),
+    : m_uuid(std::move(uuid)),
       m_myName(std::move(myName)),
       m_otherName(std::move(otherName)),
       m_phase(CallPhase::initial),
@@ -133,9 +132,9 @@ Call::OnIceCandidate(const webrtc::IceCandidateInterface *candidate) {
     auto sdp = QString::fromStdString(sdpString);
 
 
-    auto iceCandidate = new IceCandidate(this->uuid(), candidate->sdp_mline_index(), std::move(sdpMid), std::move(sdp));
+    auto iceCandidate = IceCandidate(this->uuid(), candidate->sdp_mline_index(), std::move(sdpMid), std::move(sdp));
 
-    Q_EMIT createdSignalingMessage(iceCandidate);
+    this->createdSignalingMessage(iceCandidate);
 }
 
 
@@ -167,7 +166,7 @@ void
 Call::changeConnectionState(CallConnectionState newState) noexcept {
     if (newState != m_connectionState) {
         m_connectionState = newState;
-        Q_EMIT connectionStateChanged(m_connectionState);
+        connectionStateChanged(m_connectionState);
     }
 }
 
