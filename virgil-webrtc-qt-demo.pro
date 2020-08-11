@@ -45,16 +45,45 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-# WebRTC
-mac: LIBS += -L$$PWD/3rdparty/WebRTC/lib -lwebrtc
-mac: LIBS += -framework Foundation -framework CoreServices -framework ApplicationServices -framework CoreAudio -framework AudioToolbox
-mac: DEFINES += WEBRTC_MAC WEBRTC_POSIX
+# 3rdparty
+macx {
+    message("* Using settings for MacOS.")
+    LIBS += -L$$PWD/3rdparty/WebRTC/mac/lib -lwebrtc_d
+    LIBS += -framework Foundation -framework CoreServices -framework ApplicationServices -framework CoreAudio -framework AudioToolbox
+    DEFINES += WEBRTC_MAC WEBRTC_POSIX WEBRTC_UNIX
+    WEBRTC_LIB_SUBDIR = "mac"
+}
+
+linux:!android {
+    message("* Using settings for Linux.")
+    LIBS += -L$$PWD/3rdparty/WebRTC/linux/lib/x86_64 -lwebrtc_d
+    LIBS += -framework Foundation -framework CoreServices -framework ApplicationServices -framework CoreAudio -framework AudioToolbox
+    DEFINES += WEBRTC_MAC WEBRTC_POSIX WEBRTC_UNIX
+    WEBRTC_LIB_SUBDIR = "linux"
+}
+
+android {
+    message("* Using settings for Android.")
+    LIBS += -L$$PWD/3rdparty/WebRTC/android/lib/$$ANDROID_TARGET_ARCH -lwebrtc_d
+    LIBS += -landroid -lOpenSLES
+    DEFINES += WEBRTC_LINUX WEBRTC_ANDROID WEBRTC_POSIX
+    SOURCES += src/jni/init_android.cpp
+    WEBRTC_LIB_SUBDIR = "android"
+}
+
+ios {
+    message("* Using settings for iOS.")
+    QMAKE_LFLAGS += -force_load $$PWD/3rdparty/WebRTC/ios/lib/libwebrtc_d.a
+    LIBS += -framework Foundation -framework CoreServices -framework CoreAudio -framework AudioToolbox -framework AVFoundation -framework CoreMedia
+    DEFINES += WEBRTC_MAC WEBRTC_IOS WEBRTC_POSIX WEBRTC_UNIX
+    WEBRTC_LIB_SUBDIR = "ios"
+}
 
 INCLUDEPATH += \
     $$PWD/3rdparty \
-    $$PWD/3rdparty/WebRTC/include \
-    $$PWD/3rdparty/WebRTC/include/webrtc \
-    $$PWD/3rdparty/WebRTC/include/third_party \
-    $$PWD/3rdparty/WebRTC/include/third_party/abseil-cpp
+    $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include \
+    $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include/webrtc \
+    $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include/webrtc/third_party \
+    $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include/webrtc/third_party/abseil-cpp
 
-DEPENDPATH += $$PWD/3rdparty/WebRTC/include
+DEPENDPATH += $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include
