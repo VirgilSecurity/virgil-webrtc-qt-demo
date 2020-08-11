@@ -18,6 +18,7 @@ CallConnectionFactory::CallConnectionFactory() {
     rtc::LogMessage::SetLogToStderr(true);
     rtc::LogMessage::LogTimestamps();
     rtc::LogMessage::LogThreads();
+    rtc::LogMessage::LogToDebug(rtc::LoggingSeverity::LS_VERBOSE);
 
     const bool isInitializedSSL = rtc::InitializeSSL();
     CallException::throwIfFalse(isInitializedSSL,

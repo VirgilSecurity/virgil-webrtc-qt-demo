@@ -50,6 +50,7 @@ IncomingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
     auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSuccess),
             std::move(onSetRemoteDescriptionFailure));
 
+    rtc::CritScope lock(&m_peerConnectionMutex);
     this->peerConnection()->SetRemoteDescription(observer.release(), sessionDescription.release());
 }
 
@@ -84,6 +85,7 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSetLocalDescriptionSuccess),
                 std::move(onSetLocalDescriptionFailure));
 
+        rtc::CritScope lock(&m_peerConnectionMutex);
         this->peerConnection()->SetLocalDescription(observer.release(), sdp.release());
     };
 
@@ -95,5 +97,6 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
     auto observer = Observers::makeCreateSessionDescriptionObserver(std::move(onCreateAnswerSuccess),
             std::move(onCreateAnswerFailure));
 
+    rtc::CritScope lock(&m_peerConnectionMutex);
     this->peerConnection()->CreateAnswer(observer.release(), webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
 }

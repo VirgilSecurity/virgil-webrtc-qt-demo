@@ -23,7 +23,6 @@ private:
 
 private:
     rtc::ThreadChecker m_thread_checker;
-    webrtc::Mutex m_pc_mutex;
 
     std::unique_ptr<rtc::Thread> m_network_thread RTC_GUARDED_BY(m_thread_checker);
     std::unique_ptr<rtc::Thread> m_worker_thread RTC_GUARDED_BY(m_thread_checker);

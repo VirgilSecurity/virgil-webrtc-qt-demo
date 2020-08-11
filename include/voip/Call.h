@@ -8,6 +8,8 @@
 #include <optional>
 
 #include <webrtc/api/peer_connection_interface.h>
+#include <webrtc/rtc_base/critical_section.h>
+#include <webrtc/rtc_base/thread_checker.h>
 #include <sigslot/signal.hpp>
 
 #include "CallError.h"
@@ -120,6 +122,9 @@ protected:
     void
     changeConnectionState(CallConnectionState newState) noexcept;
 
+protected:
+    rtc::CriticalSection m_peerConnectionMutex;
+
 private:
     QUuid m_uuid;
     QString m_myName;
@@ -129,7 +134,8 @@ private:
     CallConnectionState m_connectionState;
 
     std::optional<QDateTime> m_connectedAt;
-    rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection;
+
+    rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection RTC_GUARDED_BY(m_peerConnectionMutex);
 };
 
 } // namespace voip

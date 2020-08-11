@@ -54,6 +54,7 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSetLocalDescriptionSuccess),
                 std::move(onSetLocalDescriptionFailure));
 
+        rtc::CritScope lock(&m_peerConnectionMutex);
         this->peerConnection()->SetLocalDescription(observer.release(), sdp.release());
     };
 
@@ -69,6 +70,7 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
 
     callOptions.offer_to_receive_audio = 1;
 
+    rtc::CritScope lock(&m_peerConnectionMutex);
     this->peerConnection()->CreateOffer(observer.release(), callOptions);
 }
 
@@ -99,5 +101,6 @@ OutgoingCall::accept(const CallAnswer &callAnswer, OnSuccessFunc onSuccess, OnFa
     auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSuccess),
             std::move(onSetRemoteDescriptionFailure));
 
+    rtc::CritScope lock(&m_peerConnectionMutex);
     this->peerConnection()->SetRemoteDescription(observer.release(), sessionDescription.release());
 }

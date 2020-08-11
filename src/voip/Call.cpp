@@ -25,6 +25,8 @@ Call::setupPeerConnection(rtc::scoped_refptr<webrtc::PeerConnectionInterface> pe
 void
 Call::addRemoteIceCandidate(const IceCandidate &iceCandidate) {
 
+    rtc::CritScope lock(&m_peerConnectionMutex);
+
     webrtc::SdpParseError error = {};
 
     auto sdpMid = iceCandidate.sdpMid().toStdString();
@@ -43,6 +45,8 @@ Call::addRemoteIceCandidate(const IceCandidate &iceCandidate) {
 
 void
 Call::end() noexcept {
+    rtc::CritScope lock(&m_peerConnectionMutex);
+
     m_peerConnection->Close();
     m_peerConnection = nullptr;
     m_phase = CallPhase::ended;
@@ -51,6 +55,8 @@ Call::end() noexcept {
 
 void
 Call::hold(bool onHold) noexcept {
+    rtc::CritScope lock(&m_peerConnectionMutex);
+
     if (!m_peerConnection) {
         return;
     }
