@@ -68,6 +68,7 @@ android {
     LIBS += -landroid -lOpenSLES
     DEFINES += WEBRTC_LINUX WEBRTC_ANDROID WEBRTC_POSIX
     SOURCES += src/jni/init_android.cpp
+    ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
     WEBRTC_LIB_SUBDIR = "android"
 }
 
