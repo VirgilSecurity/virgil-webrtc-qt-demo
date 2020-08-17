@@ -1,4 +1,4 @@
-QT += quick
+QT += quick websockets
 
 CONFIG += c++17 qtquickcompiler no_keywords
 TARGET = virgil-webrtc-demo
@@ -69,6 +69,9 @@ android {
     DEFINES += WEBRTC_LINUX WEBRTC_ANDROID WEBRTC_POSIX
     SOURCES += src/jni/init_android.cpp
     ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+    ANDROID_MIN_SDK_VERSION = 26
+    ANDROID_TARGET_SDK_VERSION = 26
+    ANDROID_API_VERSION = 8
     WEBRTC_LIB_SUBDIR = "android"
 }
 
