@@ -7,8 +7,7 @@
 
 using namespace virgil::voip;
 
-CallAnswer::CallAnswer(QUuid callUUID, QString sdp)
-    : m_callUUID(std::move(callUUID)), m_sdp(std::move(sdp)) {
+CallAnswer::CallAnswer(QUuid callUUID, QString sdp) : m_callUUID(std::move(callUUID)), m_sdp(std::move(sdp)) {
 }
 
 QJsonObject
@@ -71,10 +70,12 @@ CallAnswer::fromJson(const QJsonObject &json) {
     return CallAnswer(std::move(callUUID), std::move(sdp));
 }
 
-QUuid CallAnswer::callUUID() const noexcept {
+QUuid
+CallAnswer::callUUID() const noexcept {
     return m_callUUID;
 }
 
-QString CallAnswer::sdp() const noexcept {
+QString
+CallAnswer::sdp() const noexcept {
     return m_sdp;
 }

@@ -27,9 +27,11 @@ public:
     static CallAnswer
     fromJson(const QJsonObject &json);
 
-    QUuid callUUID() const noexcept;
+    QUuid
+    callUUID() const noexcept;
 
-    QString sdp() const noexcept;
+    QString
+    sdp() const noexcept;
 
 private:
     QUuid m_callUUID;

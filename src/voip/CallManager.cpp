@@ -9,20 +9,19 @@
 using namespace virgil::voip;
 
 
-CallManager::CallManager() {
+CallManager::CallManager(QString myId) : m_myId(std::move(myId)) {
 }
 
-CallManager &
-CallManager::sharedInstance() {
-    static CallManager callManager{};
-    return callManager;
+const QString &
+CallManager::myId() const noexcept {
+    return m_myId;
 }
 
 std::shared_ptr<OutgoingCall>
 CallManager::createOutgoingCall(QString callee) {
     auto callUUID = QUuid::createUuid();
 
-    auto outgoingCall = std::make_shared<OutgoingCall>(std::move(callUUID), "test_user", std::move(callee));
+    auto outgoingCall = std::make_shared<OutgoingCall>(std::move(callUUID), m_myId, std::move(callee));
 
     this->connectCall(outgoingCall);
 
@@ -33,7 +32,7 @@ CallManager::createOutgoingCall(QString callee) {
 
 std::shared_ptr<IncomingCall>
 CallManager::createIncomingCall(const CallOffer &callOffer) {
-    auto incomingCall = std::make_shared<IncomingCall>(callOffer, "test_user");
+    auto incomingCall = std::make_shared<IncomingCall>(callOffer, m_myId);
 
     this->connectCall(incomingCall);
 

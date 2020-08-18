@@ -35,13 +35,6 @@ IncomingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
 
     this->changePhase(CallPhase::ringing);
 
-    auto sessionDescription = webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, m_sdpString.toStdString());
-    if (!sessionDescription) {
-        qDebug() << "Can not start an incoming call (failed to parse session description)";
-        onFailure(CallError::FailedToParseSessionDescription);
-        return;
-    }
-
     auto onSetRemoteDescriptionFailure = [onFailure](webrtc::RTCError error) {
         qDebug() << "Failed to set an offer session description as remote session description: " << error.message();
         onFailure(CallError::FailedToSetRemoteSessionDescription);
@@ -50,8 +43,16 @@ IncomingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
     auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSuccess),
             std::move(onSetRemoteDescriptionFailure));
 
-    rtc::CritScope lock(&m_peerConnectionMutex);
-    this->peerConnection()->SetRemoteDescription(observer.release(), sessionDescription.release());
+    this->doPeerConnectionOp([onFailure, observer, sdpString{m_sdpString.toStdString()}](auto peerConnection) mutable {
+        auto sessionDescription = webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, sdpString);
+        if (!sessionDescription) {
+            qDebug() << "Can not start an incoming call (failed to parse session description)";
+            onFailure(CallError::FailedToParseSessionDescription);
+            return;
+        }
+
+        peerConnection->SetRemoteDescription(observer.release(), sessionDescription.release());
+    });
 }
 
 
@@ -60,8 +61,7 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
 
     this->changePhase(CallPhase::accepted);
 
-    auto onCreateAnswerSuccess = [this, onSuccess, onFailure](
-                                         std::unique_ptr<webrtc::SessionDescriptionInterface> sdp) {
+    auto onCreateAnswerSuccess = [this, onSuccess, onFailure](webrtc::SessionDescriptionInterface *sdp) {
         std::string sdpString;
 
         if (!sdp->ToString(&sdpString)) {
@@ -85,8 +85,9 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSetLocalDescriptionSuccess),
                 std::move(onSetLocalDescriptionFailure));
 
-        rtc::CritScope lock(&m_peerConnectionMutex);
-        this->peerConnection()->SetLocalDescription(observer.release(), sdp.release());
+        this->doPeerConnectionOp([observer, sdp](auto peerConnection) mutable {
+            peerConnection->SetLocalDescription(observer.release(), sdp);
+        });
     };
 
     auto onCreateAnswerFailure = [=](webrtc::RTCError error) {
@@ -97,6 +98,11 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
     auto observer = Observers::makeCreateSessionDescriptionObserver(std::move(onCreateAnswerSuccess),
             std::move(onCreateAnswerFailure));
 
-    rtc::CritScope lock(&m_peerConnectionMutex);
-    this->peerConnection()->CreateAnswer(observer.release(), webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+
+    auto callOptions = webrtc::PeerConnectionInterface::RTCOfferAnswerOptions();
+    callOptions.offer_to_receive_audio = 1;
+
+    this->doPeerConnectionOp([observer, callOptions{std::move(callOptions)}](auto peerConnection) mutable {
+        peerConnection->CreateAnswer(observer.release(), callOptions);
+    });
 }

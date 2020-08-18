@@ -7,6 +7,7 @@
 
 #include <unordered_map>
 #include <memory>
+#include <string>
 
 #include <sigslot/signal.hpp>
 
@@ -25,10 +26,10 @@ class IceCandidate;
 
 class CallManager {
 public:
-    CallManager();
+    CallManager(QString myId);
 
-    static CallManager &
-    sharedInstance();
+    const QString &
+    myId() const noexcept;
 
     std::shared_ptr<OutgoingCall>
     createOutgoingCall(QString callee);
@@ -63,13 +64,9 @@ private:
     void
     connectCall(std::shared_ptr<Call> call);
 
-    //
-    //  Proxy connections.
-    //
-
-
 private:
     std::unordered_map<QUuid, std::shared_ptr<Call>> m_calls;
+    QString m_myId;
 };
 
 } // namespace voip

@@ -28,7 +28,7 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         return;
     }
 
-    auto onCreateOfferSuccess = [this, onSuccess, onFailure](std::unique_ptr<webrtc::SessionDescriptionInterface> sdp) {
+    auto onCreateOfferSuccess = [this, onSuccess, onFailure](webrtc::SessionDescriptionInterface *sdp) {
         std::string sdpString;
 
         if (!sdp->ToString(&sdpString)) {
@@ -54,8 +54,9 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSetLocalDescriptionSuccess),
                 std::move(onSetLocalDescriptionFailure));
 
-        rtc::CritScope lock(&m_peerConnectionMutex);
-        this->peerConnection()->SetLocalDescription(observer.release(), sdp.release());
+        this->doPeerConnectionOp([observer, sdp](auto peerConnection) mutable {
+            peerConnection->SetLocalDescription(observer.release(), sdp);
+        });
     };
 
     auto onCreateOfferFailure = [=](webrtc::RTCError error) {
@@ -67,11 +68,11 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
             std::move(onCreateOfferFailure));
 
     auto callOptions = webrtc::PeerConnectionInterface::RTCOfferAnswerOptions();
-
     callOptions.offer_to_receive_audio = 1;
 
-    rtc::CritScope lock(&m_peerConnectionMutex);
-    this->peerConnection()->CreateOffer(observer.release(), callOptions);
+    this->doPeerConnectionOp([observer, callOptions{std::move(callOptions)}](auto peerConnection) mutable {
+        peerConnection->CreateOffer(observer.release(), callOptions);
+    });
 }
 
 
@@ -84,15 +85,6 @@ OutgoingCall::accept(const CallAnswer &callAnswer, OnSuccessFunc onSuccess, OnFa
 
     this->changePhase(CallPhase::accepted);
 
-    auto sdpString = callAnswer.sdp();
-
-    auto sessionDescription = webrtc::CreateSessionDescription(webrtc::SdpType::kAnswer, sdpString.toStdString());
-    if (!sessionDescription) {
-        qDebug() << "Can not accept a call (failed to parse session description)";
-        onFailure(CallError::FailedToParseSessionDescription);
-        return;
-    }
-
     auto onSetRemoteDescriptionFailure = [onFailure](webrtc::RTCError error) {
         qDebug() << "Failed to set an answer session description as remote session description: " << error.message();
         onFailure(CallError::FailedToSetRemoteSessionDescription);
@@ -101,6 +93,15 @@ OutgoingCall::accept(const CallAnswer &callAnswer, OnSuccessFunc onSuccess, OnFa
     auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSuccess),
             std::move(onSetRemoteDescriptionFailure));
 
-    rtc::CritScope lock(&m_peerConnectionMutex);
-    this->peerConnection()->SetRemoteDescription(observer.release(), sessionDescription.release());
+    this->doPeerConnectionOp(
+            [onFailure, observer, sdpString{callAnswer.sdp().toStdString()}](auto peerConnection) mutable {
+                auto sessionDescription = webrtc::CreateSessionDescription(webrtc::SdpType::kAnswer, sdpString);
+                if (!sessionDescription) {
+                    qDebug() << "Can not accept a call (failed to parse session description)";
+                    onFailure(CallError::FailedToParseSessionDescription);
+                    return;
+                }
+
+                peerConnection->SetRemoteDescription(observer.release(), sessionDescription.release());
+            });
 }

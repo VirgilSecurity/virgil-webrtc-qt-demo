@@ -27,13 +27,17 @@ public:
     static IceCandidate
     fromJson(const QJsonObject &json);
 
-    QUuid callUUID() const noexcept;
+    QUuid
+    callUUID() const noexcept;
 
-    int sdpMLineIndex() const noexcept;
+    int
+    sdpMLineIndex() const noexcept;
 
-    QString sdpMid() const noexcept;
+    QString
+    sdpMid() const noexcept;
 
-    QString sdp() const noexcept;
+    QString
+    sdp() const noexcept;
 
 private:
     QUuid m_callUUID;

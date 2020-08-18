@@ -6,6 +6,7 @@
 #include <QUuid>
 
 #include <optional>
+#include <vector>
 
 #include <webrtc/api/peer_connection_interface.h>
 #include <webrtc/rtc_base/critical_section.h>
@@ -104,26 +105,14 @@ public:
     psigslot::signal<const CallSignalingMessage &> createdSignalingMessage;
 
 protected:
-    /**
-     *  Return defined peer contection or throws 'CallError::NoPeerConnection' otherwise.
-     */
-    rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-    peerConnection();
-
-    /**
-     *  Return defined peer contection or throws 'CallError::NoPeerConnection' otherwise.
-     */
-    const rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-    peerConnection() const;
-
     void
     changePhase(CallPhase newPhase) noexcept;
 
     void
     changeConnectionState(CallConnectionState newState) noexcept;
 
-protected:
-    rtc::CriticalSection m_peerConnectionMutex;
+    void
+    doPeerConnectionOp(std::function<void(rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection)> op);
 
 private:
     QUuid m_uuid;
@@ -135,7 +124,7 @@ private:
 
     std::optional<QDateTime> m_connectedAt;
 
-    rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection RTC_GUARDED_BY(m_peerConnectionMutex);
+    rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection;
 };
 
 } // namespace voip

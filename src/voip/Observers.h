@@ -13,7 +13,12 @@ namespace voip {
 
 class Observers {
 public:
-    using OnSuccessFunc = std::function<void(std::unique_ptr<webrtc::SessionDescriptionInterface> desc)>;
+    //
+    //  Ownership of the "desc" should be passed back to the WebRTC via:
+    //    - setLocalSessionDescription()
+    //    - setRemoteSessionDescription()
+    //
+    using OnSuccessFunc = std::function<void(webrtc::SessionDescriptionInterface *desc)>;
     using OnFailureFunc = std::function<void(webrtc::RTCError error)>;
 
     using OnSuccessVoidFunc = std::function<void()>;

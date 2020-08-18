@@ -6,6 +6,7 @@ TabWidth:        4
 UseTab:          Never
 ColumnLimit:     120
 IndentWidth:     4
+IndentCaseLabels: true
 ContinuationIndentWidth: 8
 AllowShortFunctionsOnASingleLine : false
 DerivePointerAlignment: false
@@ -36,4 +37,5 @@ BraceWrapping:
   BeforeCatch:     false
   BeforeElse:      false
   IndentBraces:    false
+  AfterCaseLabel:  false
 ...

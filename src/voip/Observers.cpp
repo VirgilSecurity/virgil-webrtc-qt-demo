@@ -19,7 +19,7 @@ public:
 
     virtual void
     OnSuccess(webrtc::SessionDescriptionInterface *desc) override {
-        m_onSuccess(std::unique_ptr<webrtc::SessionDescriptionInterface>(desc));
+        m_onSuccess(desc);
     }
 
     virtual void

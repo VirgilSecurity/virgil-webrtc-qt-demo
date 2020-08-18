@@ -2,6 +2,7 @@
 
 #include "voip/CallException.h"
 #include "voip/IceCandidate.h"
+#include "voip/PeerConnectionQueue.h"
 
 #include <QDebug>
 
@@ -25,29 +26,30 @@ Call::setupPeerConnection(rtc::scoped_refptr<webrtc::PeerConnectionInterface> pe
 void
 Call::addRemoteIceCandidate(const IceCandidate &iceCandidate) {
 
-    rtc::CritScope lock(&m_peerConnectionMutex);
-
-    webrtc::SdpParseError error = {};
-
     auto sdpMid = iceCandidate.sdpMid().toStdString();
     auto sdpMLineIndex = iceCandidate.sdpMLineIndex();
     auto sdpString = iceCandidate.sdp().toStdString();
 
-    std::unique_ptr<webrtc::IceCandidateInterface> webrtcIceCandidate{
-            webrtc::CreateIceCandidate(sdpMid, sdpMLineIndex, sdpString, &error)};
+    this->doPeerConnectionOp([sdpMid, sdpMLineIndex, sdpString](auto peerConnection) {
+        webrtc::SdpParseError error = {};
 
-    if (webrtcIceCandidate.get() != nullptr) {
-        this->peerConnection()->AddIceCandidate(webrtcIceCandidate.get());
-    } else {
-        qWarning() << "Failed to parse ice candidate: " << QString::fromStdString(error.description);
-    }
+        std::unique_ptr<webrtc::IceCandidateInterface> webrtcIceCandidate{
+                webrtc::CreateIceCandidate(sdpMid, sdpMLineIndex, sdpString, &error)};
+
+        if (webrtcIceCandidate.get() != nullptr) {
+            peerConnection->AddIceCandidate(webrtcIceCandidate.get());
+        } else {
+            qWarning() << "Failed to parse ice candidate: " << QString::fromStdString(error.description);
+        }
+    });
 }
 
 void
 Call::end() noexcept {
-    rtc::CritScope lock(&m_peerConnectionMutex);
+    this->doPeerConnectionOp([](auto peerConnection) {
+        peerConnection->Close();
+    });
 
-    m_peerConnection->Close();
     m_peerConnection = nullptr;
     m_phase = CallPhase::ended;
     m_connectionState = CallConnectionState::none;
@@ -55,17 +57,13 @@ Call::end() noexcept {
 
 void
 Call::hold(bool onHold) noexcept {
-    rtc::CritScope lock(&m_peerConnectionMutex);
+    this->doPeerConnectionOp([onHold](auto peerConnection) {
+        auto transivers = peerConnection->GetTransceivers();
 
-    if (!m_peerConnection) {
-        return;
-    }
-
-    auto transivers = m_peerConnection->GetTransceivers();
-
-    for (const auto &transiver : transivers) {
-        transiver->sender()->track()->set_enabled(!onHold);
-    }
+        for (const auto &transiver : transivers) {
+            transiver->sender()->track()->set_enabled(!onHold);
+        }
+    });
 }
 
 void
@@ -88,33 +86,33 @@ Call::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState ne
     qDebug() << "Call::OnConnectionChange()" << (int)newState;
 
     switch (newState) {
-    case webrtc::PeerConnectionInterface::PeerConnectionState::kNew:
-        changeConnectionState(CallConnectionState::initial);
-        break;
+        case webrtc::PeerConnectionInterface::PeerConnectionState::kNew:
+            changeConnectionState(CallConnectionState::initial);
+            break;
 
-    case webrtc::PeerConnectionInterface::PeerConnectionState::kConnecting:
-        changeConnectionState(CallConnectionState::connecting);
-        break;
+        case webrtc::PeerConnectionInterface::PeerConnectionState::kConnecting:
+            changeConnectionState(CallConnectionState::connecting);
+            break;
 
-    case webrtc::PeerConnectionInterface::PeerConnectionState::kConnected:
-        changeConnectionState(CallConnectionState::connected);
-        break;
+        case webrtc::PeerConnectionInterface::PeerConnectionState::kConnected:
+            changeConnectionState(CallConnectionState::connected);
+            break;
 
-    case webrtc::PeerConnectionInterface::PeerConnectionState::kDisconnected:
-        changeConnectionState(CallConnectionState::disconnected);
-        break;
+        case webrtc::PeerConnectionInterface::PeerConnectionState::kDisconnected:
+            changeConnectionState(CallConnectionState::disconnected);
+            break;
 
-    case webrtc::PeerConnectionInterface::PeerConnectionState::kFailed:
-        changeConnectionState(CallConnectionState::failed);
-        break;
+        case webrtc::PeerConnectionInterface::PeerConnectionState::kFailed:
+            changeConnectionState(CallConnectionState::failed);
+            break;
 
-    case webrtc::PeerConnectionInterface::PeerConnectionState::kClosed:
-        changeConnectionState(CallConnectionState::closed);
-        break;
+        case webrtc::PeerConnectionInterface::PeerConnectionState::kClosed:
+            changeConnectionState(CallConnectionState::closed);
+            break;
 
-    default:
-        qWarning() << "Undefined PeerConnectionState: " << (int)newState;
-        break;
+        default:
+            qWarning() << "Undefined PeerConnectionState: " << (int)newState;
+            break;
     }
 }
 
@@ -141,23 +139,6 @@ Call::OnIceCandidate(const webrtc::IceCandidateInterface *candidate) {
     auto iceCandidate = IceCandidate(this->uuid(), candidate->sdp_mline_index(), std::move(sdpMid), std::move(sdp));
 
     this->createdSignalingMessage(iceCandidate);
-}
-
-
-rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-Call::peerConnection() {
-
-    CallException::throwIfNull(m_peerConnection, CallError::NoPeerConnection);
-
-    return m_peerConnection;
-}
-
-const rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-Call::peerConnection() const {
-
-    CallException::throwIfNull(m_peerConnection, CallError::NoPeerConnection);
-
-    return m_peerConnection;
 }
 
 void
@@ -194,4 +175,11 @@ Call::otherName() const noexcept {
 std::optional<QDateTime>
 Call::connectedAt() const noexcept {
     return m_connectedAt;
+}
+
+void
+Call::doPeerConnectionOp(std::function<void(rtc::scoped_refptr<webrtc::PeerConnectionInterface>)> op) {
+    PeerConnectionQueue::sharedInstance().dispatch([peerConnection = m_peerConnection, op] {
+        op(peerConnection);
+    });
 }

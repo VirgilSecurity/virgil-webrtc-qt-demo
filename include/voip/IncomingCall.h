@@ -11,7 +11,7 @@ namespace voip {
 
 class IncomingCall : public Call {
 public:
-    IncomingCall(const CallOffer& callOffer, QString myName);
+    IncomingCall(const CallOffer &callOffer, QString myName);
 
     virtual bool
     isOutgoing() const noexcept override;

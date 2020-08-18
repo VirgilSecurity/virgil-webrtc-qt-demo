@@ -12,6 +12,8 @@
 using namespace virgil::voip;
 
 CallConnectionFactory::CallConnectionFactory() {
+    m_thread_checker.Detach();
+
     //
     // Setup WebRTC global environment.
     //
@@ -95,8 +97,6 @@ CallConnectionFactory::setupPeerConnection(Call &call) const {
     rtcConfig.servers.emplace_back(std::move(publicStunIceServers));
     rtcConfig.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
     rtcConfig.continual_gathering_policy = webrtc::PeerConnectionInterface::GATHER_CONTINUALLY;
-    // DTLS SRTP has to be disabled for loopback to work.
-    rtcConfig.enable_dtls_srtp = false;
 
     //
     //  Define dependencies.

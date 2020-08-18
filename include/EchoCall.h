@@ -2,6 +2,8 @@
 #define ECHO_CALL_H_INCLUDED
 
 #include <QObject>
+#include <QtWebSockets/QWebSocket>
+#include <QUuid>
 
 #include <memory>
 
@@ -20,48 +22,52 @@ public:
     Q_INVOKABLE void
     answer();
 
-    void
-    outgoingCallPhaseChanged(const virgil::voip::Call &call, virgil::voip::CallPhase newPhase);
-
-    void
-    outgoingCallConnectionStateChanged(const virgil::voip::Call &call,
-            virgil::voip::CallConnectionState newConnectionState);
-
-    void
-    outgoingCallFailed(const virgil::voip::Call &call, virgil::voip::CallError error);
-
-    void
-    outgoingCreatedMessageToSent(const virgil::voip::Call &call, const virgil::voip::CallSignalingMessage &message);
-
-    void
-    incomingCallPhaseChanged(const virgil::voip::Call &call, virgil::voip::CallPhase newPhase);
-
-    void
-    incomingCallConnectionStateChanged(const virgil::voip::Call &call,
-            virgil::voip::CallConnectionState newConnectionState);
-
-    void
-    incomingCallFailed(const virgil::voip::Call &call, virgil::voip::CallError error);
-
-    void
-    incomingCreatedMessageToSent(const virgil::voip::Call &call, const virgil::voip::CallSignalingMessage &message);
-
 Q_SIGNALS:
     void
     messageLogged(const QString &);
 
 private:
     void
+    callPhaseChanged(const virgil::voip::Call &call, virgil::voip::CallPhase newPhase);
+
+    void
+    callConnectionStateChanged(const virgil::voip::Call &call, virgil::voip::CallConnectionState newConnectionState);
+
+    void
+    callFailed(const virgil::voip::Call &call, virgil::voip::CallError error);
+
+    void
+    callCreatedSignalingMessage(const virgil::voip::Call &call, const virgil::voip::CallSignalingMessage &message);
+
+    void
+    onSignalingMessageReceived(const QString &message);
+
+    void
+    onSocketConnected();
+
+    void
+    onSocketDisconnected();
+
+    void
+    onSocketError(QAbstractSocket::SocketError error);
+
+private:
+    void
     logMessage(const QString &message);
 
     void
-    processCallSignalingMessage(virgil::voip::CallManager &callManager,
-            const virgil::voip::CallSignalingMessage &message);
+    sendCallSignalingMessage(const virgil::voip::CallSignalingMessage &message);
+
+    void
+    processCallSignalingMessage(const QString &messageString);
+
+    void
+    processCallSignalingMessage(const virgil::voip::CallSignalingMessage &message);
 
 private:
-    std::unique_ptr<virgil::voip::CallManager> m_caller;
-    std::unique_ptr<virgil::voip::CallManager> m_callee;
+    std::unique_ptr<virgil::voip::CallManager> m_callManager;
     QUuid m_incomingCallUuid;
+    QWebSocket m_socket;
 };
 
 #endif

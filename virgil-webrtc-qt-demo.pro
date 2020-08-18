@@ -19,11 +19,14 @@ HEADERS += \
     include/voip/IceCandidate.h \
     include/voip/IncomingCall.h \
     include/voip/OutgoingCall.h \
-    src/voip/Observers.h
+    src/queue/dispatch_queue.h \
+    src/voip/Observers.h \
+    src/voip/PeerConnectionQueue.h
 
 SOURCES += \
     src/EchoCall.cpp \
     src/main.cpp \
+    src/queue/dispatch_queue.cpp \
     src/voip/Call.cpp \
     src/voip/CallAnswer.cpp \
     src/voip/CallConnectionFactory.cpp \
@@ -34,12 +37,13 @@ SOURCES += \
     src/voip/IceCandidate.cpp \
     src/voip/IncomingCall.cpp \
     src/voip/Observers.cpp \
-    src/voip/OutgoingCall.cpp
+    src/voip/OutgoingCall.cpp \
+    src/voip/PeerConnectionQueue.cpp
 
 RESOURCES += \
     src/ui/qml.qrc
 
-INCLUDEPATH += include
+INCLUDEPATH += include src
 
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
@@ -77,6 +81,7 @@ android {
 
 ios {
     message("* Using settings for iOS.")
+    QMAKE_INFO_PLIST = $$PWD/ios/Info.plist
     QMAKE_LFLAGS += -force_load $$PWD/3rdparty/WebRTC/ios/lib/libwebrtc_d.a
     LIBS += -framework Foundation -framework CoreServices -framework CoreAudio -framework AudioToolbox -framework AVFoundation -framework CoreMedia
     DEFINES += WEBRTC_MAC WEBRTC_IOS WEBRTC_POSIX WEBRTC_UNIX

@@ -8,7 +8,9 @@
 using namespace virgil::voip;
 
 IceCandidate::IceCandidate(QUuid callUUID, int sdpMLineIndex, QString sdpMid, QString sdp)
-    : m_callUUID(std::move(callUUID)), m_sdpMLineIndex(sdpMLineIndex), m_sdpMid(std::move(sdpMid)),
+    : m_callUUID(std::move(callUUID)),
+      m_sdpMLineIndex(sdpMLineIndex),
+      m_sdpMid(std::move(sdpMid)),
       m_sdp(std::move(sdp)) {
 }
 
