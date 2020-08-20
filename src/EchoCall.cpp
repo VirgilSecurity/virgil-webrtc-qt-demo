@@ -125,6 +125,21 @@ EchoCall::answer() {
             });
 }
 
+void EchoCall::hold()
+{
+    logMessage("EchoCall::hold()");
+}
+
+void EchoCall::mute()
+{
+    logMessage("EchoCall::mute()");
+}
+
+void EchoCall::speakerOnOff()
+{
+    logMessage("EchoCall::speakerOnOff()");
+}
+
 void
 EchoCall::logMessage(const QString &message) {
     // Currently we don't need real logging, just emit a signal

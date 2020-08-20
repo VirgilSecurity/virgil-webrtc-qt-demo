@@ -40,21 +40,49 @@ ApplicationWindow {
         }
 
         Button {
-            id: buttonCall
-            text: qsTr("Call")
+            id: buttonHold
+            text: qsTr("On Hold")
             Layout.fillWidth: true
         }
 
-        Button {
-            id: buttonAnswer
-            text: qsTr("Answer")
+        GridLayout {
+            columns: 2
+            columnSpacing: defaultSpacing
+            rowSpacing: defaultSpacing
             Layout.fillWidth: true
+
+            Button {
+                id: buttonMute
+                text: qsTr("Mute")
+                Layout.fillWidth: true
+            }
+
+            Button {
+                id: buttonSpeaker
+                text: qsTr("Speakers On/Off")
+                Layout.fillWidth: true
+            }
+
+            Button {
+                id: buttonCall
+                text: qsTr("Call")
+                Layout.fillWidth: true
+            }
+
+            Button {
+                id: buttonAnswer
+                text: qsTr("Answer")
+                Layout.fillWidth: true
+            }
         }
     }
 
     Component.onCompleted: {
         buttonCall.clicked.connect(handler.call)
         buttonAnswer.clicked.connect(handler.answer)
+        buttonHold.clicked.connect(handler.hold)
+        buttonMute.clicked.connect(handler.mute)
+        buttonSpeaker.clicked.connect(handler.speakerOnOff)
         handler.messageLogged.connect(textArea.append)
     }
 }

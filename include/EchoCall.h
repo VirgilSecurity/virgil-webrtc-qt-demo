@@ -22,6 +22,12 @@ public:
     Q_INVOKABLE void
     answer();
 
+    Q_INVOKABLE void hold();
+
+    Q_INVOKABLE void mute();
+
+    Q_INVOKABLE void speakerOnOff();
+
 Q_SIGNALS:
     void
     messageLogged(const QString &);
