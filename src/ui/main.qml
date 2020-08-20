@@ -45,39 +45,40 @@ ApplicationWindow {
             rowSpacing: defaultSpacing
             Layout.fillWidth: true
 
-            Button {
-                id: buttonMute
-                text: qsTr("Mute")
+            ActionButton {
+                buttonAction: handler.muteAction
+                checkable: true
+                text: checked ? qsTr("Mute") : qsTr("Unmute")
                 Layout.fillWidth: true
             }
 
-            Button {
-                id: buttonSpeaker
-                text: qsTr("Speaker On")
+            ActionButton {
+                buttonAction: handler.speakerAction
+                checkable: true
+                text: checked ? qsTr("Speaker Off") : qsTr("Speaker On")
                 Layout.fillWidth: true
             }
 
-            Button {
-                id: buttonHold
-                text: qsTr("On Hold")
+            ActionButton {
+                buttonAction: handler.holdAction
+                checkable: true
+                text: checked ? qsTr("Resume") : qsTr("On Hold")
                 Layout.fillWidth: true
             }
         }
 
-        GridLayout {
-            columns: 2
-            columnSpacing: defaultSpacing
-            rowSpacing: defaultSpacing
+        RowLayout {
+            spacing: defaultSpacing
             Layout.fillWidth: true
 
-            Button {
-                id: buttonCall
+            ActionButton {
+                buttonAction: handler.callAction
                 text: qsTr("Call")
                 Layout.fillWidth: true
             }
 
-            Button {
-                id: buttonAnswer
+            ActionButton {
+                buttonAction: handler.answerAction
                 text: qsTr("Answer")
                 Layout.fillWidth: true
             }
@@ -85,11 +86,6 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        buttonCall.clicked.connect(handler.call)
-        buttonAnswer.clicked.connect(handler.answer)
-        buttonHold.clicked.connect(handler.hold)
-        buttonMute.clicked.connect(handler.mute)
-        buttonSpeaker.clicked.connect(handler.speakerOnOff)
         handler.messageLogged.connect(textArea.append)
     }
 }
