@@ -39,14 +39,8 @@ ApplicationWindow {
             }
         }
 
-        Button {
-            id: buttonHold
-            text: qsTr("On Hold")
-            Layout.fillWidth: true
-        }
-
         GridLayout {
-            columns: 2
+            columns: 3
             columnSpacing: defaultSpacing
             rowSpacing: defaultSpacing
             Layout.fillWidth: true
@@ -59,9 +53,22 @@ ApplicationWindow {
 
             Button {
                 id: buttonSpeaker
-                text: qsTr("Speakers On/Off")
+                text: qsTr("Speaker On")
                 Layout.fillWidth: true
             }
+
+            Button {
+                id: buttonHold
+                text: qsTr("On Hold")
+                Layout.fillWidth: true
+            }
+        }
+
+        GridLayout {
+            columns: 2
+            columnSpacing: defaultSpacing
+            rowSpacing: defaultSpacing
+            Layout.fillWidth: true
 
             Button {
                 id: buttonCall
