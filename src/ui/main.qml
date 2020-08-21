@@ -48,7 +48,7 @@ ApplicationWindow {
             ActionButton {
                 buttonAction: handler.muteAction
                 checkable: true
-                text: checked ? qsTr("Mute") : qsTr("Unmute")
+                text: checked ? qsTr("Unmute") : qsTr("Mute")
                 Layout.fillWidth: true
             }
 
