@@ -53,7 +53,18 @@ messageTypeFromString(const QString &messageType) {
 }
 
 EchoCall::EchoCall(QObject *parent)
-    : QObject(parent), m_callManager(std::make_unique<voip::CallManager>(generateUniqueId())) {
+    : QObject(parent), m_callManager(std::make_unique<voip::CallManager>(generateUniqueId()))
+    , m_callAction(new Action(this))
+    , m_answerAction(new Action(this))
+    , m_holdAction(new Action(this))
+    , m_muteAction(new Action(this))
+    , m_speakerAction(new Action(this))
+{
+    connect(m_callAction, &Action::triggered, this, &EchoCall::call);
+    connect(m_answerAction, &Action::triggered, this, &EchoCall::answer);
+    connect(m_holdAction, &Action::triggered, this, &EchoCall::hold);
+    connect(m_muteAction, &Action::triggered, this, &EchoCall::mute);
+    connect(m_speakerAction, &Action::triggered, this, &EchoCall::speakerOnOff);
 
     //
     //  Connect Caller.
