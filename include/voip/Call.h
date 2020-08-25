@@ -65,7 +65,13 @@ public:
     end() noexcept;
 
     void
-    hold(bool onHold) noexcept;
+    setHoldOn(bool on) noexcept;
+
+    void
+    setMicrophoneOn(bool on) noexcept;
+
+    void
+    setVoiceOn(bool on) noexcept;
 
     QUuid
     uuid() const noexcept;

@@ -56,12 +56,35 @@ Call::end() noexcept {
 }
 
 void
-Call::hold(bool onHold) noexcept {
-    this->doPeerConnectionOp([onHold](auto peerConnection) {
+Call::setHoldOn(bool on) noexcept {
+    this->doPeerConnectionOp([on](auto peerConnection) {
         auto transivers = peerConnection->GetTransceivers();
 
         for (const auto &transiver : transivers) {
-            transiver->sender()->track()->set_enabled(!onHold);
+            transiver->sender()->track()->set_enabled(!on);
+            transiver->receiver()->track()->set_enabled(!on);
+        }
+    });
+}
+
+void
+Call::setMicrophoneOn(bool on) noexcept {
+    this->doPeerConnectionOp([on](auto peerConnection) {
+        auto senders = peerConnection->GetSenders();
+
+        for (const auto &sender : senders) {
+            sender->track()->set_enabled(on);
+        }
+    });
+}
+
+void
+Call::setVoiceOn(bool on) noexcept {
+    this->doPeerConnectionOp([on](auto peerConnection) {
+        auto receivers = peerConnection->GetReceivers();
+
+        for (const auto &receiver : receivers) {
+            receiver->track()->set_enabled(on);
         }
     });
 }

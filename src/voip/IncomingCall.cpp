@@ -40,7 +40,8 @@ IncomingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         onFailure(CallError::FailedToSetRemoteSessionDescription);
     };
 
-    auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSuccess),
+    auto observer = Observers::makeSetSessionDescriptionObserver(
+            std::move(onSuccess),
             std::move(onSetRemoteDescriptionFailure));
 
     this->doPeerConnectionOp([onFailure, observer, sdpString{m_sdpString.toStdString()}](auto peerConnection) mutable {
@@ -82,7 +83,8 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
             onFailure(CallError::FailedToSetLocalSessionDescription);
         };
 
-        auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSetLocalDescriptionSuccess),
+        auto observer = Observers::makeSetSessionDescriptionObserver(
+                std::move(onSetLocalDescriptionSuccess),
                 std::move(onSetLocalDescriptionFailure));
 
         this->doPeerConnectionOp([observer, sdp](auto peerConnection) mutable {
@@ -95,7 +97,8 @@ IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         onFailure(CallError::FailedToCreateCallAnswer);
     };
 
-    auto observer = Observers::makeCreateSessionDescriptionObserver(std::move(onCreateAnswerSuccess),
+    auto observer = Observers::makeCreateSessionDescriptionObserver(
+            std::move(onCreateAnswerSuccess),
             std::move(onCreateAnswerFailure));
 
 

@@ -4,7 +4,9 @@
 #include "voip/Call.h"
 
 #include <webrtc/api/peer_connection_interface.h>
-#include <webrtc/rtc_base/thread_checker.h>
+#include <webrtc/rtc_base/critical_section.h>
+#include <webrtc/rtc_base/thread_annotations.h>
+#include <webrtc/modules/audio_device/include/audio_device.h>
 
 namespace virgil {
 namespace voip {
@@ -15,20 +17,15 @@ public:
     sharedInstance();
 
     void
-    setupPeerConnection(Call &call) const RTC_RUN_ON(m_thread_checker);
+    setupPeerConnection(Call &call) const;
 
 private:
     CallConnectionFactory();
-    ~CallConnectionFactory();
+    ~CallConnectionFactory() noexcept = default;
 
 private:
-    rtc::ThreadChecker m_thread_checker;
-
-    std::unique_ptr<rtc::Thread> m_network_thread RTC_GUARDED_BY(m_thread_checker);
-    std::unique_ptr<rtc::Thread> m_worker_thread RTC_GUARDED_BY(m_thread_checker);
-    std::unique_ptr<rtc::Thread> m_signaling_thread RTC_GUARDED_BY(m_thread_checker);
-
-    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> m_peerConnectionFactory RTC_GUARDED_BY(m_thread_checker);
+    rtc::CriticalSection factoryMutex_;
+    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory_ RTC_GUARDED_BY(factoryMutex_);
 };
 
 } // namespace voip

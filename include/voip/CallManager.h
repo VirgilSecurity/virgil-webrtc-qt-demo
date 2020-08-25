@@ -1,6 +1,15 @@
 #ifndef VIRGIL_VOIP_CALL_MANAGER_H_INCLUDED
 #define VIRGIL_VOIP_CALL_MANAGER_H_INCLUDED
 
+#include "Call.h"
+#include "IncomingCall.h"
+#include "OutgoingCall.h"
+#include "PlatformAudio.h"
+
+#include "utils/quuid_unordered_map_spec.h"
+
+#include <sigslot/signal.hpp>
+
 #include <QObject>
 #include <QString>
 #include <QUuid>
@@ -9,13 +18,6 @@
 #include <memory>
 #include <string>
 
-#include <sigslot/signal.hpp>
-
-#include "Call.h"
-#include "IncomingCall.h"
-#include "OutgoingCall.h"
-
-#include "utils/quuid_unordered_map_spec.h"
 
 namespace virgil {
 namespace voip {
@@ -26,7 +28,7 @@ class IceCandidate;
 
 class CallManager {
 public:
-    CallManager(QString myId);
+    explicit CallManager(QString myId, std::unique_ptr<PlatformAudio> platformAudio = nullptr);
 
     const QString &
     myId() const noexcept;
@@ -52,6 +54,18 @@ public:
     void
     processIceCandidate(const IceCandidate &iceCandidate);
 
+    void
+    setMicrophoneOn(bool on);
+
+    void
+    setVoiceOn(bool on);
+
+    void
+    setSpeakerOn(bool on);
+
+    void
+    setHoldOn(bool on);
+
     psigslot::signal<const Call &, CallPhase> callPhaseChanged;
 
     psigslot::signal<const Call &, CallConnectionState> callConnectionStateChanged;
@@ -65,6 +79,7 @@ private:
     connectCall(std::shared_ptr<Call> call);
 
 private:
+    std::unique_ptr<PlatformAudio> m_platformAudio;
     std::unordered_map<QUuid, std::shared_ptr<Call>> m_calls;
     QString m_myId;
 };

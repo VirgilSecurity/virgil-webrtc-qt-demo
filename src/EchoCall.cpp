@@ -53,18 +53,23 @@ messageTypeFromString(const QString &messageType) {
 }
 
 EchoCall::EchoCall(QObject *parent)
-    : QObject(parent), m_callManager(std::make_unique<voip::CallManager>(generateUniqueId()))
-    , m_callAction(new Action(this))
-    , m_answerAction(new Action(this))
-    , m_holdAction(new Action(this))
-    , m_muteAction(new Action(this))
-    , m_speakerAction(new Action(this))
-{
+    : QObject(parent),
+      m_callManager(std::make_unique<voip::CallManager>(generateUniqueId())),
+      m_callAction(new Action(this)),
+      m_answerAction(new Action(this)),
+      m_endAction(new Action(this)),
+      m_holdAction(new Action(this)),
+      m_muteAction(new Action(this)),
+      m_speakerAction(new Action(this)),
+      m_muteVoiceAction(new Action(this)) {
+
     connect(m_callAction, &Action::triggered, this, &EchoCall::call);
     connect(m_answerAction, &Action::triggered, this, &EchoCall::answer);
+    connect(m_endAction, &Action::triggered, this, &EchoCall::end);
     connect(m_holdAction, &Action::triggered, this, &EchoCall::hold);
     connect(m_muteAction, &Action::triggered, this, &EchoCall::mute);
     connect(m_speakerAction, &Action::triggered, this, &EchoCall::speakerOnOff);
+    connect(m_muteVoiceAction, &Action::triggered, this, &EchoCall::muteVoice);
 
     //
     //  Connect Caller.
@@ -136,19 +141,56 @@ EchoCall::answer() {
             });
 }
 
-void EchoCall::hold()
-{
-    logMessage("EchoCall::hold()");
+void
+EchoCall::end() {
 }
 
-void EchoCall::mute()
-{
-    logMessage("EchoCall::mute()");
+void
+EchoCall::hold() {
+    bool on = this->m_holdAction->checked();
+    m_callManager->setHoldOn(on);
+
+    if (on) {
+        logMessage("Hold");
+    } else {
+        logMessage("Unhold");
+    }
 }
 
-void EchoCall::speakerOnOff()
-{
-    logMessage("EchoCall::speakerOnOff()");
+void
+EchoCall::mute() {
+    bool off = this->m_muteAction->checked();
+    m_callManager->setMicrophoneOn(!off);
+
+    if (off) {
+        logMessage("Microphone was muted");
+    } else {
+        logMessage("Microphone was unmuted");
+    }
+}
+
+void
+EchoCall::speakerOnOff() {
+    bool on = this->m_speakerAction->checked();
+    m_callManager->setSpeakerOn(on);
+
+    if (on) {
+        logMessage("Speaker on (not implemented)");
+    } else {
+        logMessage("Speaker off (not implemented)");
+    }
+}
+
+void
+EchoCall::muteVoice() {
+    bool off = this->m_muteVoiceAction->checked();
+    m_callManager->setVoiceOn(!off);
+
+    if (off) {
+        logMessage("Voice was muted");
+    } else {
+        logMessage("Voice was unmuted");
+    }
 }
 
 void

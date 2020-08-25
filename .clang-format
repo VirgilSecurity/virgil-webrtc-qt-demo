@@ -11,7 +11,7 @@ ContinuationIndentWidth: 8
 AllowShortFunctionsOnASingleLine : false
 DerivePointerAlignment: false
 PointerAlignment: Right
-AlignAfterOpenBracket: DontAlign
+AlignAfterOpenBracket: AlwaysBreak
 AccessModifierOffset: -4
 BinPackArguments: false
 BinPackParameters: false

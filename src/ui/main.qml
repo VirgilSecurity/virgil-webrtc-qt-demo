@@ -39,10 +39,8 @@ ApplicationWindow {
             }
         }
 
-        GridLayout {
-            columns: 3
-            columnSpacing: defaultSpacing
-            rowSpacing: defaultSpacing
+        RowLayout {
+            spacing: defaultSpacing
             Layout.fillWidth: true
 
             ActionButton {
@@ -53,11 +51,24 @@ ApplicationWindow {
             }
 
             ActionButton {
+                buttonAction: handler.muteVoiceAction
+                checkable: true
+                text: checked ? qsTr("Unmute Voice") : qsTr("Mute Voice")
+                Layout.fillWidth: true
+            }
+
+            ActionButton {
                 buttonAction: handler.speakerAction
                 checkable: true
                 text: checked ? qsTr("Speaker Off") : qsTr("Speaker On")
                 Layout.fillWidth: true
             }
+
+        }
+
+        RowLayout {
+            spacing: defaultSpacing
+            Layout.fillWidth: true
 
             ActionButton {
                 buttonAction: handler.holdAction
@@ -66,6 +77,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
             }
         }
+
 
         RowLayout {
             spacing: defaultSpacing
@@ -80,6 +92,12 @@ ApplicationWindow {
             ActionButton {
                 buttonAction: handler.answerAction
                 text: qsTr("Answer")
+                Layout.fillWidth: true
+            }
+
+            ActionButton {
+                buttonAction: handler.endAction
+                text: qsTr("End")
                 Layout.fillWidth: true
             }
         }

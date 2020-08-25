@@ -5,11 +5,16 @@
 #include "voip/Call.h"
 #include "voip/OutgoingCall.h"
 #include "voip/IncomingCall.h"
+#include "voip/CallConnectionFactory.h"
 
 using namespace virgil::voip;
 
 
-CallManager::CallManager(QString myId) : m_myId(std::move(myId)) {
+CallManager::CallManager(QString myId, std::unique_ptr<PlatformAudio> platformAudio)
+    : m_myId(std::move(myId)), m_platformAudio(std::move(platformAudio)) {
+    if (!m_platformAudio) {
+        m_platformAudio = PlatformAudio::createDefault();
+    }
 }
 
 const QString &
@@ -72,7 +77,6 @@ CallManager::findOutgoingCall(const QUuid &uuid) {
     return nullptr;
 }
 
-
 void
 CallManager::processCallAnswer(const CallAnswer &callAnswer) {
     auto call = findOutgoingCall(callAnswer.callUUID());
@@ -87,7 +91,6 @@ CallManager::processCallAnswer(const CallAnswer &callAnswer) {
     }
 }
 
-
 void
 CallManager::processIceCandidate(const IceCandidate &iceCandidate) {
     auto call = findCall(iceCandidate.callUUID());
@@ -96,6 +99,33 @@ CallManager::processIceCandidate(const IceCandidate &iceCandidate) {
     }
 }
 
+void
+CallManager::setMicrophoneOn(bool on) {
+    for (const auto &callIt : m_calls) {
+        auto call = callIt.second;
+        call->setMicrophoneOn(on);
+    }
+}
+
+void
+CallManager::setVoiceOn(bool on) {
+    for (const auto &callIt : m_calls) {
+        auto call = callIt.second;
+        call->setVoiceOn(on);
+    }
+}
+
+void
+CallManager::setSpeakerOn(bool on) {
+}
+
+void
+CallManager::setHoldOn(bool on) {
+    for (const auto &callIt : m_calls) {
+        auto call = callIt.second;
+        call->setHoldOn(on);
+    }
+}
 
 void
 CallManager::connectCall(std::shared_ptr<Call> call) {

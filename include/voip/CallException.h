@@ -4,8 +4,6 @@
 #include <stdexcept>
 #include <string>
 
-#include <webrtc/api/scoped_refptr.h>
-
 #include "CallError.h"
 
 namespace virgil {

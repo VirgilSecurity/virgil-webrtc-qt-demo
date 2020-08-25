@@ -37,7 +37,8 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         }
 
         auto onSetLocalDescriptionSuccess = [this, onSuccess, onFailure, sdpString = std::move(sdpString)]() {
-            auto message = CallOffer(this->uuid(),
+            auto message = CallOffer(
+                    this->uuid(),
                     QDateTime::currentDateTime(),
                     this->myName(),
                     QString::fromStdString(sdpString));
@@ -51,7 +52,8 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
             onFailure(CallError::FailedToSetLocalSessionDescription);
         };
 
-        auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSetLocalDescriptionSuccess),
+        auto observer = Observers::makeSetSessionDescriptionObserver(
+                std::move(onSetLocalDescriptionSuccess),
                 std::move(onSetLocalDescriptionFailure));
 
         this->doPeerConnectionOp([observer, sdp](auto peerConnection) mutable {
@@ -64,7 +66,8 @@ OutgoingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
         onFailure(CallError::FailedToCreateCallOffer);
     };
 
-    auto observer = Observers::makeCreateSessionDescriptionObserver(std::move(onCreateOfferSuccess),
+    auto observer = Observers::makeCreateSessionDescriptionObserver(
+            std::move(onCreateOfferSuccess),
             std::move(onCreateOfferFailure));
 
     auto callOptions = webrtc::PeerConnectionInterface::RTCOfferAnswerOptions();
@@ -90,7 +93,8 @@ OutgoingCall::accept(const CallAnswer &callAnswer, OnSuccessFunc onSuccess, OnFa
         onFailure(CallError::FailedToSetRemoteSessionDescription);
     };
 
-    auto observer = Observers::makeSetSessionDescriptionObserver(std::move(onSuccess),
+    auto observer = Observers::makeSetSessionDescriptionObserver(
+            std::move(onSuccess),
             std::move(onSetRemoteDescriptionFailure));
 
     this->doPeerConnectionOp(

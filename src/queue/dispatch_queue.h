@@ -17,7 +17,7 @@ namespace dispatch {
  * Author: https://github.com/phillipjohnston
  * License: CC0
  */
-
+// TODO: Replace with rtc::TaskQueue
 class dispatch_queue {
     typedef std::function<void(void)> fp_t;
 

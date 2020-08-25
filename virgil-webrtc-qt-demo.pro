@@ -3,6 +3,11 @@ QT += quick websockets
 CONFIG += c++17 qtquickcompiler no_keywords
 TARGET = virgil-webrtc-demo
 
+clang {
+    message("* Using compiler: clang.")
+    QMAKE_CXXFLAGS += -Wthread-safety
+}
+
 DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += \
@@ -19,9 +24,14 @@ HEADERS += \
     include/voip/IceCandidate.h \
     include/voip/IncomingCall.h \
     include/voip/OutgoingCall.h \
+    include/voip/PlatformAudio.h \
+    include/voip/PlatformError.h \
+    include/voip/PlatformException.h \
     src/queue/dispatch_queue.h \
     src/voip/Observers.h \
-    src/voip/PeerConnectionQueue.h
+    src/voip/PeerConnectionQueue.h \
+    src/voip/PlatformAudioWebRtc.h \
+    src/voip/WebRtcResource.h
 
 SOURCES += \
     src/EchoCall.cpp \
@@ -38,12 +48,20 @@ SOURCES += \
     src/voip/IncomingCall.cpp \
     src/voip/Observers.cpp \
     src/voip/OutgoingCall.cpp \
-    src/voip/PeerConnectionQueue.cpp
+    src/voip/PeerConnectionQueue.cpp \
+    src/voip/PlatformAudio.cpp \
+    src/voip/PlatformAudioWebRtc.cpp \
+    src/voip/PlatformException.cpp \
+    src/voip/WebRtcResource.cpp
 
 RESOURCES += \
     src/ui/qml.qrc
 
-INCLUDEPATH += include src
+INCLUDEPATH += \
+    include \
+    src \
+    include/voip \
+    src/voip
 
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
@@ -71,7 +89,12 @@ android {
     LIBS += -L$$PWD/3rdparty/WebRTC/android/lib/$$ANDROID_TARGET_ARCH -lwebrtc_d
     LIBS += -landroid -lOpenSLES
     DEFINES += WEBRTC_LINUX WEBRTC_ANDROID WEBRTC_POSIX
-    SOURCES += src/jni/init_android.cpp
+    HEADERS += \
+        src/voip/android/PlatformAudioAndroid.h
+    SOURCES += \
+        src/jni/init_android.cpp \
+        src/voip/android/PlatformAudioAndroid.cpp
+
     ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
     ANDROID_MIN_SDK_VERSION = 28
     ANDROID_TARGET_SDK_VERSION = 28
