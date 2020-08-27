@@ -115,8 +115,14 @@ CallManager::setVoiceOn(bool on) {
     }
 }
 
+bool
+CallManager::hasSpeaker() const {
+    return m_platformAudio->hasSpeaker();
+}
+
 void
 CallManager::setSpeakerOn(bool on) {
+    m_platformAudio->setSpeakerOn(on);
 }
 
 void

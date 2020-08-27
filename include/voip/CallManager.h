@@ -60,6 +60,9 @@ public:
     void
     setVoiceOn(bool on);
 
+    bool
+    hasSpeaker() const;
+
     void
     setSpeakerOn(bool on);
 
@@ -79,9 +82,9 @@ private:
     connectCall(std::shared_ptr<Call> call);
 
 private:
+    QString m_myId;
     std::unique_ptr<PlatformAudio> m_platformAudio;
     std::unordered_map<QUuid, std::shared_ptr<Call>> m_calls;
-    QString m_myId;
 };
 
 } // namespace voip

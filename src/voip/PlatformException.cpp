@@ -11,6 +11,7 @@ using namespace virgil::voip;
 static std::string
 stringify(PlatformError callError) {
     switch (callError) { CASE_ENUM_VALUE_RETURN_STR(PlatformError::FailedJNI); }
+    switch (callError) { CASE_ENUM_VALUE_RETURN_STR(PlatformError::FailedPlatformAudio); }
 }
 
 static std::string

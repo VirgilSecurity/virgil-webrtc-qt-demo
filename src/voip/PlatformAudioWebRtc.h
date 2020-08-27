@@ -22,20 +22,9 @@ public:
     //
     virtual bool
     hasSpeaker() const override;
-    virtual bool
-    setSpeakerOn() override;
-    virtual bool
-    setSpeakerOff() override;
 
-    //
-    // Microphone control.
-    //
-    virtual bool
-    hasMicrophone() const override;
-    virtual bool
-    setMicrophoneOn() override;
-    virtual bool
-    setMicrophoneOff() override;
+    virtual void
+    setSpeakerOn(bool on) override;
 
 private:
     rtc::scoped_refptr<webrtc::AudioDeviceModule> audioDeviceModule_;

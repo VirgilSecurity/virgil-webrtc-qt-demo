@@ -10,168 +10,80 @@ using namespace virgil::voip;
 using namespace std::literals;
 
 
-PlatformAudioAndroid::PlatformAudioAndroid()
-    : javaPlatformAudio_(std::make_unique<PlatformAudioAndroid::JavaPlatformAudio>()) {
-}
-
-bool
-PlatformAudioAndroid::hasSpeaker() const {
-    rtc::CritScope lock(&javaPlatformAudioMutex_);
-    return javaPlatformAudio_->hasSpeaker();
-}
-
-bool
-PlatformAudioAndroid::setSpeakerOn() {
-    rtc::CritScope lock(&javaPlatformAudioMutex_);
-    return javaPlatformAudio_->setSpeakerOn();
-}
-
-bool
-PlatformAudioAndroid::setSpeakerOff() {
-    rtc::CritScope lock(&javaPlatformAudioMutex_);
-    return javaPlatformAudio_->setSpeakerOff();
-}
-
-bool
-PlatformAudioAndroid::hasMicrophone() const {
-    rtc::CritScope lock(&javaPlatformAudioMutex_);
-    return javaPlatformAudio_->hasMicrophone();
-}
-
-bool
-PlatformAudioAndroid::setMicrophoneOn() {
-    rtc::CritScope lock(&javaPlatformAudioMutex_);
-    return javaPlatformAudio_->setMicrophoneOn();
-}
-
-bool
-PlatformAudioAndroid::setMicrophoneOff() {
-    rtc::CritScope lock(&javaPlatformAudioMutex_);
-    return javaPlatformAudio_->setMicrophoneOff();
-}
-
-PlatformAudioAndroid::JavaPlatformAudio::JavaPlatformAudio() {
-    JNIEnv *env = webrtc::AttachCurrentThreadIfNeeded();
-    PlatformException::throwIfNull(env, PlatformError::FailedJNI);
+PlatformAudioAndroid::PlatformAudioAndroid() {
+    JNIEnv *jEnv = webrtc::AttachCurrentThreadIfNeeded();
+    PlatformException::throwIfNull(jEnv, PlatformError::FailedJNI);
 
     constexpr const char *className = "com/virgilsecurity/voip/PlatformAudio";
 
     try {
-        jclass platformAudioClass = env->FindClass(className);
+        jclass jPlatformAudioClass = jEnv->FindClass(className);
         PlatformException::throwIfTrue(
-                (nullptr == platformAudioClass) || env->ExceptionCheck(),
+                (nullptr == jPlatformAudioClass) || jEnv->ExceptionCheck(),
                 PlatformError::FailedJNI,
                 "Failed to load java class: "s + className);
 
-        jmethodID platformAudioCtor = env->GetMethodID(platformAudioClass, "<init>", "()V");
+        jmethodID jPlatformAudioCtor = jEnv->GetMethodID(jPlatformAudioClass, "<init>", "()V");
         PlatformException::throwIfTrue(
-                (nullptr == platformAudioCtor) || env->ExceptionCheck(),
+                (nullptr == jPlatformAudioCtor) || jEnv->ExceptionCheck(),
                 PlatformError::FailedJNI,
                 "Failed to load java class: "s + className + " constructor"s);
 
-        hasSpeakerMethod_ = env->GetMethodID(platformAudioClass, "hasSpeaker", "()Z");
+        jHasSpeakerMethod_ = jEnv->GetMethodID(jPlatformAudioClass, "hasSpeaker", "()Z");
         PlatformException::throwIfTrue(
-                (nullptr == hasSpeakerMethod_) || env->ExceptionCheck(),
+                (nullptr == jHasSpeakerMethod_) || jEnv->ExceptionCheck(),
                 PlatformError::FailedJNI,
-                "Failed to load java class: "s + className + " method: hasSpeaker()"s);
+                "Failed to load java class: "s + className + ", method: hasSpeaker()"s);
 
-        setSpeakerOnMethod_ = env->GetMethodID(platformAudioClass, "setSpeakerOn", "()Z");
+        jSetSpeakerOnMethod_ = jEnv->GetMethodID(jPlatformAudioClass, "setSpeakerOn", "(Z)V");
         PlatformException::throwIfTrue(
-                (nullptr == setSpeakerOnMethod_) || env->ExceptionCheck(),
+                (nullptr == jSetSpeakerOnMethod_) || jEnv->ExceptionCheck(),
                 PlatformError::FailedJNI,
-                "Failed to load java class: "s + className + " method: setSpeakerOn()"s);
+                "Failed to load java class: "s + className + ", method: setSpeakerOn()"s);
 
-        setSpeakerOffMethod_ = env->GetMethodID(platformAudioClass, "setSpeakerOff", "()Z");
+        jobject jPlatformAudio = jEnv->NewObject(jPlatformAudioClass, jPlatformAudioCtor);
         PlatformException::throwIfTrue(
-                (nullptr == setSpeakerOffMethod_) || env->ExceptionCheck(),
-                PlatformError::FailedJNI,
-                "Failed to load java class: "s + className + " method: setSpeakerOff()"s);
-
-        hasMicrophoneMethod_ = env->GetMethodID(platformAudioClass, "hasMicrophone", "()Z");
-        PlatformException::throwIfTrue(
-                (nullptr == hasMicrophoneMethod_) || env->ExceptionCheck(),
-                PlatformError::FailedJNI,
-                "Failed to load java class: "s + className + " method: hasMicrophone()"s);
-
-        setMicrophoneOnMethod_ = env->GetMethodID(platformAudioClass, "setMicrophoneOn", "()Z");
-        PlatformException::throwIfTrue(
-                (nullptr == setMicrophoneOnMethod_) || env->ExceptionCheck(),
-                PlatformError::FailedJNI,
-                "Failed to load java class: "s + className + " method: setMicrophoneOn()"s);
-
-        setMicrophoneOffMethod_ = env->GetMethodID(platformAudioClass, "setMicrophoneOff", "()Z");
-        PlatformException::throwIfTrue(
-                (nullptr == setMicrophoneOffMethod_) || env->ExceptionCheck(),
-                PlatformError::FailedJNI,
-                "Failed to load java class: "s + className + " method: setMicrophoneOff()"s);
-
-
-        jobject platformAudio = env->NewObject(platformAudioClass, platformAudioCtor);
-        PlatformException::throwIfTrue(
-                (nullptr == platformAudio) || env->ExceptionCheck(),
+                (nullptr == jPlatformAudio) || jEnv->ExceptionCheck(),
                 PlatformError::FailedJNI,
                 "Failed to create java class: "s + className);
 
-        platformAudio_ = env->NewGlobalRef(platformAudio);
+        jPlatformAudio_ = jEnv->NewGlobalRef(jPlatformAudio);
     } catch (...) {
-        env->ExceptionClear();
+        jEnv->ExceptionClear();
         throw;
     }
 }
 
-PlatformAudioAndroid::JavaPlatformAudio::~JavaPlatformAudio() noexcept {
-    JNIEnv *env = webrtc::AttachCurrentThreadIfNeeded();
-    if (env) {
-        env->DeleteGlobalRef(platformAudio_);
+PlatformAudioAndroid::~PlatformAudioAndroid() noexcept {
+    JNIEnv *jEnv = webrtc::AttachCurrentThreadIfNeeded();
+    if (jEnv) {
+        jEnv->DeleteGlobalRef(jPlatformAudio_);
     } else {
         // TODO: Log memory leak.
     }
 }
 
 bool
-PlatformAudioAndroid::JavaPlatformAudio::hasSpeaker() const {
-    JNIEnv *jni = webrtc::AttachCurrentThreadIfNeeded();
-    PlatformException::throwIfNull(jni, PlatformError::FailedJNI);
+PlatformAudioAndroid::hasSpeaker() const {
+    rtc::CritScope lock(&jPlatformAudioMutex_);
 
-    return jni->CallBooleanMethod(platformAudio_, hasSpeakerMethod_);
+    JNIEnv *jEnv = webrtc::AttachCurrentThreadIfNeeded();
+    PlatformException::throwIfNull(jEnv, PlatformError::FailedJNI);
+
+    return jEnv->CallBooleanMethod(jPlatformAudio_, jHasSpeakerMethod_);
 }
 
-bool
-PlatformAudioAndroid::JavaPlatformAudio::setSpeakerOn() {
-    JNIEnv *jni = webrtc::AttachCurrentThreadIfNeeded();
-    PlatformException::throwIfNull(jni, PlatformError::FailedJNI);
+void
+PlatformAudioAndroid::setSpeakerOn(bool on) {
+    rtc::CritScope lock(&jPlatformAudioMutex_);
 
-    return jni->CallBooleanMethod(platformAudio_, setSpeakerOnMethod_);
+    JNIEnv *jEnv = webrtc::AttachCurrentThreadIfNeeded();
+    PlatformException::throwIfNull(jEnv, PlatformError::FailedJNI);
+
+    jEnv->CallVoidMethod(jPlatformAudio_, jSetSpeakerOnMethod_, on);
 }
 
-bool
-PlatformAudioAndroid::JavaPlatformAudio::setSpeakerOff() {
-    JNIEnv *jni = webrtc::AttachCurrentThreadIfNeeded();
-    PlatformException::throwIfNull(jni, PlatformError::FailedJNI);
-
-    return jni->CallBooleanMethod(platformAudio_, setSpeakerOffMethod_);
-}
-
-bool
-PlatformAudioAndroid::JavaPlatformAudio::hasMicrophone() const {
-    JNIEnv *jni = webrtc::AttachCurrentThreadIfNeeded();
-    PlatformException::throwIfNull(jni, PlatformError::FailedJNI);
-
-    return jni->CallBooleanMethod(platformAudio_, hasMicrophoneMethod_);
-}
-
-bool
-PlatformAudioAndroid::JavaPlatformAudio::setMicrophoneOn() {
-    JNIEnv *jni = webrtc::AttachCurrentThreadIfNeeded();
-    PlatformException::throwIfNull(jni, PlatformError::FailedJNI);
-
-    return jni->CallBooleanMethod(platformAudio_, setMicrophoneOnMethod_);
-}
-
-bool
-PlatformAudioAndroid::JavaPlatformAudio::setMicrophoneOff() {
-    JNIEnv *jni = webrtc::AttachCurrentThreadIfNeeded();
-    PlatformException::throwIfNull(jni, PlatformError::FailedJNI);
-
-    return jni->CallBooleanMethod(platformAudio_, setMicrophoneOffMethod_);
+std::unique_ptr<PlatformAudio>
+PlatformAudio::createDefault() {
+    return std::make_unique<PlatformAudioAndroid>();
 }

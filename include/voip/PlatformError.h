@@ -6,6 +6,7 @@ namespace voip {
 
 enum class PlatformError {
     FailedJNI,
+    FailedPlatformAudio,
 };
 
 } // namespace voip

@@ -36,55 +36,8 @@ public class PlatformAudio {
         return true;
     }
 
-    boolean setSpeakerOn() {
-        Log.d(TAG, "setSpeakerOn()");
-        return true;
-    }
-
-    boolean setSpeakerOff() {
-        Log.d(TAG, "setSpeakerOff()");
-        return true;
-    }
-
-    //
-    // Microphone control.
-    //
-    boolean hasMicrophone() {
-        Log.d(TAG, "hasMicrophone()");
-
-        try {
-            return audioManager.getMicrophones().size() > 0;
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-            return false;
-        }
-    }
-
-    boolean setMicrophoneOn() {
-        Log.d(TAG, "setMicrophoneOn()");
-
-        if (!hasMicrophone()) {
-            return false;
-        }
-
-        if (audioManager.isMicrophoneMute()) {
-            audioManager.setMicrophoneMute(false);
-        }
-
-        return true;
-    }
-
-    boolean setMicrophoneOff() {
-        Log.d(TAG, "setMicrophoneOff()");
-
-        if (!hasMicrophone()) {
-            return false;
-        }
-
-        if (audioManager.isMicrophoneMute()) {
-            audioManager.setMicrophoneMute(true);
-        }
-
-        return true;
+    void setSpeakerOn(boolean on) {
+        Log.d(TAG, "setSpeakerOn(): " + on);
+        audioManager.setSpeakerphoneOn(on);
     }
 }

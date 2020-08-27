@@ -13,6 +13,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 HEADERS += \
     include/EchoCall.h \
     include/utils/quuid_unordered_map_spec.h \
+    include/utils/ScopedGuard.h \
     include/voip/Call.h \
     include/voip/CallAnswer.h \
     include/voip/CallConnectionFactory.h \
@@ -30,7 +31,6 @@ HEADERS += \
     src/queue/dispatch_queue.h \
     src/voip/Observers.h \
     src/voip/PeerConnectionQueue.h \
-    src/voip/PlatformAudioWebRtc.h \
     src/voip/WebRtcResource.h
 
 SOURCES += \
@@ -49,8 +49,6 @@ SOURCES += \
     src/voip/Observers.cpp \
     src/voip/OutgoingCall.cpp \
     src/voip/PeerConnectionQueue.cpp \
-    src/voip/PlatformAudio.cpp \
-    src/voip/PlatformAudioWebRtc.cpp \
     src/voip/PlatformException.cpp \
     src/voip/WebRtcResource.cpp
 
@@ -60,6 +58,7 @@ RESOURCES += \
 INCLUDEPATH += \
     include \
     src \
+    include/utils \
     include/voip \
     src/voip
 
@@ -70,45 +69,62 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 # 3rdparty
 macx {
     message("* Using settings for MacOS.")
+    WEBRTC_LIB_SUBDIR = "mac"
     LIBS += -L$$PWD/3rdparty/WebRTC/mac/lib -lwebrtc_d
     LIBS += -framework Foundation -framework CoreServices -framework ApplicationServices -framework CoreAudio -framework AudioToolbox
     DEFINES += WEBRTC_MAC WEBRTC_POSIX WEBRTC_UNIX
-    WEBRTC_LIB_SUBDIR = "mac"
+    HEADERS += \
+        src/voip/PlatformAudioWebRtc.h
+    SOURCES += \
+        src/voip/PlatformAudioWebRtc.cpp
 }
 
 linux:!android {
     message("* Using settings for Linux.")
-    LIBS += -L$$PWD/3rdparty/WebRTC/linux/lib/x86_64 -lwebrtc_d
-    LIBS += -framework Foundation -framework CoreServices -framework ApplicationServices -framework CoreAudio -framework AudioToolbox
-    DEFINES += WEBRTC_MAC WEBRTC_POSIX WEBRTC_UNIX
     WEBRTC_LIB_SUBDIR = "linux"
+    LIBS += -L$$PWD/3rdparty/WebRTC/linux/lib/x86_64 -lwebrtc_d
+    LIBS += -framework Foundation \
+            -framework CoreServices \
+            -framework ApplicationServices \
+            -framework CoreAudio \
+            -framework AudioToolbox
+    DEFINES += WEBRTC_MAC WEBRTC_POSIX WEBRTC_UNIX
+    HEADERS += \
+        src/voip/PlatformAudioWebRtc.h
+    SOURCES += \
+        src/voip/PlatformAudioWebRtc.cpp
 }
 
 android {
     message("* Using settings for Android.")
+    WEBRTC_LIB_SUBDIR = "android"
     LIBS += -L$$PWD/3rdparty/WebRTC/android/lib/$$ANDROID_TARGET_ARCH -lwebrtc_d
     LIBS += -landroid -lOpenSLES
+    ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+    ANDROID_MIN_SDK_VERSION = 28
+    ANDROID_TARGET_SDK_VERSION = 28
+    ANDROID_API_VERSION = 9
     DEFINES += WEBRTC_LINUX WEBRTC_ANDROID WEBRTC_POSIX
     HEADERS += \
         src/voip/android/PlatformAudioAndroid.h
     SOURCES += \
         src/jni/init_android.cpp \
         src/voip/android/PlatformAudioAndroid.cpp
-
-    ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
-    ANDROID_MIN_SDK_VERSION = 28
-    ANDROID_TARGET_SDK_VERSION = 28
-    ANDROID_API_VERSION = 9
-    WEBRTC_LIB_SUBDIR = "android"
 }
 
 ios {
     message("* Using settings for iOS.")
+    WEBRTC_LIB_SUBDIR = "ios"
     QMAKE_INFO_PLIST = $$PWD/ios/Info.plist
     QMAKE_LFLAGS += -force_load $$PWD/3rdparty/WebRTC/ios/lib/libwebrtc_d.a
     LIBS += -framework Foundation -framework CoreServices -framework CoreAudio -framework AudioToolbox -framework AVFoundation -framework CoreMedia
     DEFINES += WEBRTC_MAC WEBRTC_IOS WEBRTC_POSIX WEBRTC_UNIX
-    WEBRTC_LIB_SUBDIR = "ios"
+    INCLUDEPATH += \
+        $$PWD/3rdparty/WebRTC/ios/include/webrtc/sdk/objc/base
+    HEADERS += \
+        src/voip/ios/PlatformAudioIOS.h
+    SOURCES += \
+        src/voip/ios/PlatformAudioIOS.mm
 }
 
 INCLUDEPATH += \

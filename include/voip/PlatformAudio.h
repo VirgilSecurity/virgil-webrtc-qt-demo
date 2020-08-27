@@ -17,20 +17,9 @@ public:
     //
     virtual bool
     hasSpeaker() const = 0;
-    virtual bool
-    setSpeakerOn() = 0;
-    virtual bool
-    setSpeakerOff() = 0;
 
-    //
-    // Microphone control.
-    //
-    virtual bool
-    hasMicrophone() const = 0;
-    virtual bool
-    setMicrophoneOn() = 0;
-    virtual bool
-    setMicrophoneOff() = 0;
+    virtual void
+    setSpeakerOn(bool on) = 0;
 
     static std::unique_ptr<PlatformAudio>
     createDefault();

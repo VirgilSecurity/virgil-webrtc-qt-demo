@@ -14,11 +14,12 @@ namespace virgil {
 namespace voip {
 
 //
-// Implementation based on the WebRTC class "AudioDeviceModule".
+// Implementation for Android.
 //
 class PlatformAudioAndroid : public PlatformAudio {
 public:
     PlatformAudioAndroid();
+    ~PlatformAudioAndroid() noexcept;
 
     //
     // Speaker control.
@@ -26,65 +27,14 @@ public:
     virtual bool
     hasSpeaker() const override;
 
-    virtual bool
-    setSpeakerOn() override;
-
-    virtual bool
-    setSpeakerOff() override;
-
-    //
-    // Microphone control.
-    //
-    virtual bool
-    hasMicrophone() const override;
-
-    virtual bool
-    setMicrophoneOn() override;
-
-    virtual bool
-    setMicrophoneOff() override;
-
+    virtual void
+    setSpeakerOn(bool on) override;
 
 private:
-    //
-    // Wraps the corresponding Java class.
-    //
-    class JavaPlatformAudio {
-    public:
-        JavaPlatformAudio();
-        ~JavaPlatformAudio() noexcept;
-
-        bool
-        hasSpeaker() const;
-
-        bool
-        setSpeakerOn();
-
-        bool
-        setSpeakerOff();
-
-        bool
-        hasMicrophone() const;
-
-        bool
-        setMicrophoneOn();
-
-        bool
-        setMicrophoneOff();
-
-
-    private:
-        jobject platformAudio_;
-        jmethodID hasSpeakerMethod_;
-        jmethodID setSpeakerOnMethod_;
-        jmethodID setSpeakerOffMethod_;
-        jmethodID hasMicrophoneMethod_;
-        jmethodID setMicrophoneOnMethod_;
-        jmethodID setMicrophoneOffMethod_;
-    };
-
-    mutable rtc::CriticalSection javaPlatformAudioMutex_;
-    std::unique_ptr<JavaPlatformAudio> javaPlatformAudio_ RTC_GUARDED_BY(javaPlatformAudioMutex_);
+    mutable rtc::CriticalSection jPlatformAudioMutex_;
+    mutable jobject jPlatformAudio_ RTC_GUARDED_BY(jPlatformAudioMutex_) = nullptr;
+    jmethodID jHasSpeakerMethod_ = nullptr;
+    jmethodID jSetSpeakerOnMethod_ = nullptr;
 };
 
 } // namespace voip

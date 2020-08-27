@@ -93,6 +93,12 @@ EchoCall::EchoCall(QObject *parent)
     });
 
     //
+    //  Adjust UI.
+    //
+    this->m_speakerAction->setEnabled(m_callManager->hasSpeaker());
+    this->m_endAction->setEnabled(false);
+
+    //
     //  Init socket.
     //
     connect(&m_socket, &QWebSocket::connected, this, &EchoCall::onSocketConnected);
@@ -175,9 +181,9 @@ EchoCall::speakerOnOff() {
     m_callManager->setSpeakerOn(on);
 
     if (on) {
-        logMessage("Speaker on (not implemented)");
+        logMessage("Speaker on");
     } else {
-        logMessage("Speaker off (not implemented)");
+        logMessage("Speaker off");
     }
 }
 
