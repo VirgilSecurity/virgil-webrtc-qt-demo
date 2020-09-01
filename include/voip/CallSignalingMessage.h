@@ -18,6 +18,7 @@ public:
         callAnswer,
         callReceived,
         callRejected,
+        callEnded,
         iceCandidate,
     };
 

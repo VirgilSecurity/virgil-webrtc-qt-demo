@@ -6,6 +6,7 @@
 #include "IceCandidate.h"
 #include "CallReceived.h"
 #include "CallRejected.h"
+#include "CallEnded.h"
 
 #include <webrtc/api/peer_connection_interface.h>
 #include <webrtc/rtc_base/critical_section.h>
@@ -68,16 +69,19 @@ public:
     update(const CallRejected &callRejected);
 
     void
-    end(std::optional<CallError> maybeError = std::optional<CallError>()) noexcept;
+    update(const CallEnded &callEnded);
 
     void
-    setHoldOn(bool on) noexcept;
+    end(std::optional<CallError> maybeError = std::optional<CallError>());
 
     void
-    setMicrophoneOn(bool on) noexcept;
+    setHoldOn(bool on);
 
     void
-    setVoiceOn(bool on) noexcept;
+    setMicrophoneOn(bool on);
+
+    void
+    setVoiceOn(bool on);
 
     std::string
     uuid() const noexcept;
@@ -130,13 +134,20 @@ public:
 
 protected:
     void
-    changePhase(CallPhase newPhase, std::optional<CallError> maybeError = std::optional<CallError>()) noexcept;
+    die(CallError error);
+
+    void
+    changePhase(CallPhase newPhase, std::optional<CallError> maybeError = {}) noexcept;
 
     void
     changeConnectionState(CallConnectionState newState) noexcept;
 
     void
     doPeerConnectionOp(std::function<void(rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection_)> op);
+
+private:
+    void
+    die(CallEndReason endReason, std::optional<CallError> maybeError = {});
 
 private:
     std::string uuid_;

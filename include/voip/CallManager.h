@@ -104,6 +104,9 @@ private:
     processCallRejected(const CallRejected &callUpdate);
 
     void
+    processCallEnded(const CallEnded &callUpdate);
+
+    void
     processIceCandidate(const IceCandidate &iceCandidate);
 
 private:

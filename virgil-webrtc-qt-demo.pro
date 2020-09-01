@@ -16,13 +16,14 @@ HEADERS += \
     include/voip/Call.h \
     include/voip/CallAnswer.h \
     include/voip/CallConnectionFactory.h \
+    include/voip/CallEnded.h \
     include/voip/CallError.h \
     include/voip/CallException.h \
     include/voip/CallManager.h \
     include/voip/CallOffer.h \
-    include/voip/CallSignalingMessage.h \
     include/voip/CallReceived.h \
     include/voip/CallRejected.h \
+    include/voip/CallSignalingMessage.h \
     include/voip/IceCandidate.h \
     include/voip/IncomingCall.h \
     include/voip/OutgoingCall.h \
@@ -41,12 +42,13 @@ SOURCES += \
     src/voip/Call.cpp \
     src/voip/CallAnswer.cpp \
     src/voip/CallConnectionFactory.cpp \
+    src/voip/CallEnded.cpp \
     src/voip/CallException.cpp \
     src/voip/CallManager.cpp \
     src/voip/CallOffer.cpp \
-    src/voip/CallSignalingMessage.cpp \
     src/voip/CallReceived.cpp \
     src/voip/CallRejected.cpp \
+    src/voip/CallSignalingMessage.cpp \
     src/voip/IceCandidate.cpp \
     src/voip/IncomingCall.cpp \
     src/voip/Observers.cpp \

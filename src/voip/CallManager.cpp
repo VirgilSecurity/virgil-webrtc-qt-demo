@@ -112,6 +112,9 @@ CallManager::processCallSignalingMessage(const CallSignalingMessage &callSignali
         case voip::CallSignalingMessage::Type::callRejected:
             return processCallRejected(static_cast<const CallRejected &>(callSignalingMessage));
 
+        case voip::CallSignalingMessage::Type::callEnded:
+            return processCallEnded(static_cast<const CallEnded &>(callSignalingMessage));
+
         case voip::CallSignalingMessage::Type::iceCandidate:
             return processIceCandidate(static_cast<const IceCandidate &>(callSignalingMessage));
 
@@ -143,6 +146,14 @@ CallManager::processCallReceived(const CallReceived &callUpdate) {
 
 void
 CallManager::processCallRejected(const CallRejected &callUpdate) {
+    auto call = findOutgoingCall(callUpdate.callUUID());
+    if (call) {
+        call->update(callUpdate);
+    }
+}
+
+void
+CallManager::processCallEnded(const CallEnded &callUpdate) {
     auto call = findOutgoingCall(callUpdate.callUUID());
     if (call) {
         call->update(callUpdate);

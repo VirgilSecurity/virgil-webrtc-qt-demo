@@ -52,30 +52,50 @@ Call::update(const CallReceived &callReceived) {
 
 void
 Call::update(const CallRejected &callRejected) {
-    endReason_ = CallEndReason::rejected;
-    end();
+    die(CallEndReason::rejected);
 }
 
 void
-Call::end(std::optional<CallError> maybeError) noexcept {
+Call::update(const CallEnded &callEnded) {
+    die(CallEndReason::ended);
+}
+
+void
+Call::end(std::optional<CallError> maybeError) {
+    auto message = CallEnded(this->uuid());
+    sendSignalingMessage(message);
+
+    if (maybeError) {
+        die(CallEndReason::failed, maybeError);
+
+    } else if (!isOutgoing() && (phase_ != CallPhase::accepted)) {
+        die(CallEndReason::rejected);
+
+    } else {
+        die(CallEndReason::ended);
+    }
+}
+
+void
+Call::die(CallError error) {
+    die(CallEndReason::failed, error);
+}
+
+void
+Call::die(CallEndReason endReason, std::optional<CallError> maybeError) {
     this->doPeerConnectionOp([](auto peerConnection) {
         peerConnection->Close();
     });
 
     peerConnection_ = nullptr;
     connectionState_ = CallConnectionState::none;
-
-    if (maybeError) {
-        endReason_ = CallEndReason::failed;
-    } else if (!isOutgoing() && (phase_ != CallPhase::accepted)) {
-        endReason_ = CallEndReason::rejected;
-    }
+    endReason_ = endReason;
 
     changePhase(CallPhase::ended, maybeError);
 }
 
 void
-Call::setHoldOn(bool on) noexcept {
+Call::setHoldOn(bool on) {
     this->doPeerConnectionOp([on](auto peerConnection) {
         auto transivers = peerConnection->GetTransceivers();
 
@@ -87,7 +107,7 @@ Call::setHoldOn(bool on) noexcept {
 }
 
 void
-Call::setMicrophoneOn(bool on) noexcept {
+Call::setMicrophoneOn(bool on) {
     this->doPeerConnectionOp([on](auto peerConnection) {
         auto senders = peerConnection->GetSenders();
 
@@ -98,7 +118,7 @@ Call::setMicrophoneOn(bool on) noexcept {
 }
 
 void
-Call::setVoiceOn(bool on) noexcept {
+Call::setVoiceOn(bool on) {
     this->doPeerConnectionOp([on](auto peerConnection) {
         auto receivers = peerConnection->GetReceivers();
 

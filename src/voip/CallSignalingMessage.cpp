@@ -4,6 +4,7 @@
 #include "CallAnswer.h"
 #include "CallReceived.h"
 #include "CallRejected.h"
+#include "CallEnded.h"
 #include "IceCandidate.h"
 #include "CallException.h"
 
@@ -22,6 +23,7 @@ constexpr const char kJsonValue_CallOffer[] = "call_offer";
 constexpr const char kJsonValue_CallAnswer[] = "call_answer";
 constexpr const char kJsonValue_CallReceived[] = "call_received";
 constexpr const char kJsonValue_CallRejected[] = "call_rejected";
+constexpr const char kJsonValue_CallEnded[] = "call_ended";
 constexpr const char kJsonValue_IceCandidate[] = "ice_candidate";
 
 namespace nlohmann {
@@ -108,6 +110,25 @@ template <> struct adl_serializer<virgil::voip::CallRejected> {
 };
 
 //
+// virgil::voip::CallEnded.
+//
+template <> struct adl_serializer<virgil::voip::CallEnded> {
+    static void
+    to_json(json &j, const virgil::voip::CallEnded &t) {
+        j[kJsonKey_CallUUID] = t.callUUID();
+        j[kJsonKey_CreatedAt] = t.createdAt();
+    }
+
+    static virgil::voip::CallEnded
+    from_json(const json &j) {
+        auto callUUID = j.at(kJsonKey_CallUUID).get<std::string>();
+        auto createdAt = j.at(kJsonKey_CreatedAt).get<std::time_t>();
+
+        return {callUUID, createdAt};
+    }
+};
+
+//
 // virgil::voip::IceCandidate.
 //
 template <> struct adl_serializer<virgil::voip::IceCandidate> {
@@ -180,6 +201,11 @@ CallSignalingMessage::toJsonString(const CallSignalingMessage &callSignalingMess
             j[kJsonKey_Payload] = static_cast<const CallRejected &>(callSignalingMessage);
             break;
 
+        case CallSignalingMessage::Type::callEnded:
+            j[kJsonKey_Type] = kJsonValue_CallEnded;
+            j[kJsonKey_Payload] = static_cast<const CallEnded &>(callSignalingMessage);
+            break;
+
         case CallSignalingMessage::Type::iceCandidate:
             j[kJsonKey_Type] = kJsonValue_IceCandidate;
             j[kJsonKey_Payload] = static_cast<const IceCandidate &>(callSignalingMessage);
@@ -209,6 +235,9 @@ CallSignalingMessage::fromJsonString(const std::string &jsonStr) {
 
         } else if (messageType == kJsonValue_CallRejected) {
             return std::make_unique<CallRejected>(j.at(kJsonKey_Payload).get<CallRejected>());
+
+        } else if (messageType == kJsonValue_CallEnded) {
+            return std::make_unique<CallEnded>(j.at(kJsonKey_Payload).get<CallEnded>());
 
         } else if (messageType == kJsonValue_IceCandidate) {
             return std::make_unique<IceCandidate>(j.at(kJsonKey_Payload).get<IceCandidate>());

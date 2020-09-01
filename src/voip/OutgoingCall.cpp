@@ -22,7 +22,7 @@ OutgoingCall::start() {
         CallConnectionFactory::sharedInstance().setupPeerConnection(*this);
 
     } catch (const CallException &callException) {
-        this->end(callException.error());
+        this->die(callException.error());
         return;
     }
 
