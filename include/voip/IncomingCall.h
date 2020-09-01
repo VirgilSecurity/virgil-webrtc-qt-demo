@@ -2,28 +2,28 @@
 #define VIRGIL_VOIP_INCOMING_CALL_H_INCLUDED
 
 
-#include "voip/Call.h"
-#include "voip/CallError.h"
-#include "voip/CallOffer.h"
+#include "Call.h"
+#include "CallError.h"
+#include "CallOffer.h"
 
 namespace virgil {
 namespace voip {
 
 class IncomingCall : public Call {
 public:
-    IncomingCall(const CallOffer &callOffer, QString myName);
+    IncomingCall(const CallOffer &callOffer, std::string myName);
 
     virtual bool
     isOutgoing() const noexcept override;
 
     void
-    start(OnSuccessFunc onSuccess, OnFailureFunc onFailure);
+    start();
 
     void
-    answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure);
+    answer();
 
 private:
-    QString m_sdpString;
+    std::string sdpString_;
 };
 
 

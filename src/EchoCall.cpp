@@ -12,44 +12,9 @@
 
 namespace voip = virgil::voip;
 
-static QString
+static std::string
 generateUniqueId() {
-    return QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
-}
-
-static QString
-messageTypeToString(voip::CallSignalingMessage::Type messageType) {
-    switch (messageType) {
-        case voip::CallSignalingMessage::Type::callOffer:
-            return "call_offer";
-        case voip::CallSignalingMessage::Type::callAnswer:
-            return "call_answer";
-        case voip::CallSignalingMessage::Type::callUpdate:
-            return "call_update";
-        case voip::CallSignalingMessage::Type::iceCandidate:
-            return "ice_candidate";
-        default:
-            throw std::runtime_error("Unexpected message type");
-    }
-}
-
-static voip::CallSignalingMessage::Type
-messageTypeFromString(const QString &messageType) {
-
-    if (messageType == "call_offer") {
-        return voip::CallSignalingMessage::Type::callOffer;
-
-    } else if (messageType == "call_answer") {
-        return voip::CallSignalingMessage::Type::callAnswer;
-
-    } else if (messageType == "call_update") {
-        return voip::CallSignalingMessage::Type::callUpdate;
-
-    } else if (messageType == "ice_candidate") {
-        return voip::CallSignalingMessage::Type::iceCandidate;
-    }
-
-    throw std::runtime_error("Unexpected message type");
+    return QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces).toStdString();
 }
 
 EchoCall::EchoCall(QObject *parent)
@@ -60,43 +25,134 @@ EchoCall::EchoCall(QObject *parent)
       m_endAction(new Action(this)),
       m_holdAction(new Action(this)),
       m_muteAction(new Action(this)),
-      m_speakerAction(new Action(this)),
-      m_muteVoiceAction(new Action(this)) {
+      m_muteVoiceAction(new Action(this)),
+      m_speakerAction(new Action(this)) {
 
     connect(m_callAction, &Action::triggered, this, &EchoCall::call);
     connect(m_answerAction, &Action::triggered, this, &EchoCall::answer);
     connect(m_endAction, &Action::triggered, this, &EchoCall::end);
     connect(m_holdAction, &Action::triggered, this, &EchoCall::hold);
     connect(m_muteAction, &Action::triggered, this, &EchoCall::mute);
-    connect(m_speakerAction, &Action::triggered, this, &EchoCall::speakerOnOff);
     connect(m_muteVoiceAction, &Action::triggered, this, &EchoCall::muteVoice);
+    connect(m_speakerAction, &Action::triggered, this, &EchoCall::speakerOnOff);
 
     //
-    //  Connect Caller.
+    //  Connect CallManager events.
     //
-    m_callManager->callPhaseChanged.connect([this](const voip::Call &call, voip::CallPhase phase) {
-        this->callPhaseChanged(call, phase);
+    m_callManager->callCreated.connect([this](const voip::Call &call) {
+        if (call.isOutgoing()) {
+            this->logMessage("An outgoing call was created.");
+        } else {
+            this->logMessage("An incoming call was created.");
+        }
+        m_callAction->setEnabled(false);
+    });
+
+    m_callManager->callStarted.connect([this](const voip::Call &call) {
+        if (call.isOutgoing()) {
+            this->logMessage("An outgoing call was started.");
+        } else {
+            this->logMessage("An incoming call was started.");
+            m_answerAction->setEnabled(true);
+        }
+        m_activeCallUuid = call.uuid();
+        m_endAction->setEnabled(true);
+    });
+
+    m_callManager->callAccepted.connect([this](const voip::Call &call) {
+        if (call.isOutgoing()) {
+            this->logMessage("An outgoing call was accepted.");
+        } else {
+            this->logMessage("An incoming call was accepted.");
+        }
+    });
+
+    m_callManager->callReceived.connect([this](const voip::Call &call) {
+        if (call.isOutgoing()) {
+            this->logMessage("Ringing...");
+
+        } else {
+            this->logMessage("An incoming call was received (SHOULD NOT HAPPEN).");
+        }
+    });
+
+    m_callManager->callEnded.connect([this](const voip::Call &call, std::optional<voip::CallError> maybeError) {
+        QString logMessage = "An";
+
+        if (call.isOutgoing()) {
+            logMessage += " outgoing";
+        } else {
+            logMessage += " incoming";
+        }
+
+        logMessage += " call was";
+
+        switch (call.endReason()) {
+            case voip::CallEndReason::ended:
+                logMessage += " ended.";
+                break;
+            case voip::CallEndReason::rejected:
+                logMessage += " rejected.";
+                break;
+            case voip::CallEndReason::failed:
+                logMessage += " failed";
+                break;
+        }
+
+        if (maybeError) {
+            logMessage += QString(" with error: %1.").arg((int)(*maybeError));
+        }
+
+        this->logMessage(logMessage);
+
+        m_activeCallUuid.clear();
+        m_callAction->setEnabled(true);
+        m_answerAction->setEnabled(false);
+        m_endAction->setEnabled(false);
     });
 
     m_callManager->callConnectionStateChanged.connect(
-            [this](const voip::Call &call, voip::CallConnectionState newState) {
-                this->callConnectionStateChanged(call, newState);
+            [this](const voip::Call &call, voip::CallConnectionState callConnectionState) {
+                QString logMessage = "Call connection state: ";
+                switch (callConnectionState) {
+                    case voip::CallConnectionState::none:
+                        logMessage += "none.";
+                        break;
+                    case voip::CallConnectionState::initial:
+                        logMessage += "initial.";
+                        break;
+                    case voip::CallConnectionState::connecting:
+                        logMessage += "connecting.";
+                        break;
+                    case voip::CallConnectionState::connected:
+                        logMessage += "connected.";
+                        break;
+                    case voip::CallConnectionState::disconnected:
+                        logMessage += "disconnected.";
+                        break;
+                    case voip::CallConnectionState::failed:
+                        logMessage += "failed.";
+                        break;
+                    case voip::CallConnectionState::closed:
+                        logMessage += "closed.";
+                        break;
+                }
+                this->logMessage(logMessage);
             });
 
-    m_callManager->createdMessageToSent.connect(
-            [this](const voip::Call &call, const voip::CallSignalingMessage &signalingMessage) {
-                this->callCreatedSignalingMessage(call, signalingMessage);
+    m_callManager->sendSignalingMessage.connect(
+            [this](const voip::Call &call, const voip::CallSignalingMessage &callSignalingMessage) {
+                this->logMessage("Sending signaling message.");
+                this->sendCallSignalingMessage(callSignalingMessage);
             });
 
-    m_callManager->callFailed.connect([this](const voip::Call &call, voip::CallError error) {
-        this->callFailed(call, error);
-    });
 
     //
     //  Adjust UI.
     //
-    this->m_speakerAction->setEnabled(m_callManager->hasSpeaker());
-    this->m_endAction->setEnabled(false);
+    m_speakerAction->setEnabled(m_callManager->hasSpeaker());
+    m_answerAction->setEnabled(false);
+    m_endAction->setEnabled(false);
 
     //
     //  Init socket.
@@ -111,49 +167,48 @@ EchoCall::EchoCall(QObject *parent)
 
 void
 EchoCall::call() {
-    auto calee = generateUniqueId();
-    auto call = m_callManager->createOutgoingCall(calee);
-    call->start(
-            [this]() {
-                logMessage("Call started...");
-            },
-            [this](voip::CallError error) {
-                logMessage(QString("Call failed to start, error: %1").arg((int)error));
-            });
+    auto callee = generateUniqueId();
+    auto callUUID = generateUniqueId();
+    m_callManager->startOutgoingCall(callUUID, callee);
 }
 
 void
 EchoCall::answer() {
-    if (m_incomingCallUuid.isNull()) {
+    if (m_activeCallUuid.empty()) {
         logMessage("No incoming call.");
         return;
     }
 
-    auto uuid = QUuid(std::move(m_incomingCallUuid));
-    m_incomingCallUuid = QUuid();
-
-    auto incomingCall = m_callManager->findIncomingCall(uuid);
+    auto incomingCall = m_callManager->findIncomingCall(m_activeCallUuid);
     if (!incomingCall) {
         logMessage("Incoming call not found within manager.");
         return;
     }
 
-    incomingCall->answer(
-            [this] {
-                logMessage("Call is answered.");
-            },
-            [this](voip::CallError error) {
-                logMessage(QString("Call failed to answer, error: %1").arg((int)error));
-            });
+    m_answerAction->setEnabled(false);
+    incomingCall->answer();
 }
 
 void
 EchoCall::end() {
+    if (m_activeCallUuid.empty()) {
+        logMessage("No active call.");
+        return;
+    }
+
+    auto activeCall = m_callManager->findCall(m_activeCallUuid);
+    if (!activeCall) {
+        logMessage("No active call to be ended.");
+        return;
+    }
+
+    m_endAction->setEnabled(false);
+    activeCall->end();
 }
 
 void
 EchoCall::hold() {
-    bool on = this->m_holdAction->checked();
+    bool on = m_holdAction->checked();
     m_callManager->setHoldOn(on);
 
     if (on) {
@@ -165,7 +220,7 @@ EchoCall::hold() {
 
 void
 EchoCall::mute() {
-    bool off = this->m_muteAction->checked();
+    bool off = m_muteAction->checked();
     m_callManager->setMicrophoneOn(!off);
 
     if (off) {
@@ -177,7 +232,7 @@ EchoCall::mute() {
 
 void
 EchoCall::speakerOnOff() {
-    bool on = this->m_speakerAction->checked();
+    bool on = m_speakerAction->checked();
     m_callManager->setSpeakerOn(on);
 
     if (on) {
@@ -189,7 +244,7 @@ EchoCall::speakerOnOff() {
 
 void
 EchoCall::muteVoice() {
-    bool off = this->m_muteVoiceAction->checked();
+    bool off = m_muteVoiceAction->checked();
     m_callManager->setVoiceOn(!off);
 
     if (off) {
@@ -206,158 +261,52 @@ EchoCall::logMessage(const QString &message) {
 }
 
 void
-EchoCall::callPhaseChanged(const voip::Call &call, voip::CallPhase newPhase) {
-    logMessage("EchoCall::callPhaseChanged()");
-}
-
-void
-EchoCall::callConnectionStateChanged(const voip::Call &call, voip::CallConnectionState newConnectionState) {
-    logMessage("EchoCall::callConnectionStateChanged()");
-}
-
-void
-EchoCall::callFailed(const voip::Call &call, voip::CallError error) {
-    logMessage(QString("EchoCall::callFailed() error: %1").arg((int)error));
-}
-
-void
-EchoCall::callCreatedSignalingMessage(const voip::Call &call, const voip::CallSignalingMessage &message) {
-    logMessage("EchoCall::callCreatedSignalingMessage()");
-    this->sendCallSignalingMessage(message);
-}
-
-void
 EchoCall::sendCallSignalingMessage(const voip::CallSignalingMessage &message) {
 
     //
     //  Serialize message.
     //
-    auto json = QJsonObject();
-    json["type"] = messageTypeToString(message.type());
-    json["payload"] = message.toJson();
-    auto jsonStr = QString::fromUtf8(QJsonDocument(json).toJson(QJsonDocument::Compact));
+    auto messageStr = voip::CallSignalingMessage::toJsonString(message);
 
     //
     //  Send message.
     //
-    auto sentBytes = m_socket.sendTextMessage(jsonStr);
-    logMessage(QString("Sent %1 bytes to the socket").arg(sentBytes));
+    auto sentBytes = m_socket.sendTextMessage(QString::fromStdString(messageStr));
+    qDebug() << QString("Sent %1 bytes to the socket").arg(sentBytes);
     m_socket.flush();
 }
 
 void
 EchoCall::processCallSignalingMessage(const QString &messageString) {
-    //
-    //  Deserialize message.
-    //
-    QJsonParseError error{};
-    auto jsonDocument = QJsonDocument::fromJson(messageString.toUtf8(), &error);
-
-    if (error.error != QJsonParseError::NoError) {
-        logMessage(QString("Failed to parse signaling message (invalid JSON): %1").arg(error.errorString()));
-        return;
-    }
-
-    if (!jsonDocument.isObject()) {
-        logMessage(QString("Failed to parse signaling message (not an object)"));
-        return;
-    }
-
-    auto json = jsonDocument.object();
-
-    auto typeJson = json["type"];
-    if (!typeJson.isString()) {
-        logMessage(QString("Failed to parse signaling message (invalid or missed 'type' )"));
-        return;
-    }
-
-    auto payloadJson = json["payload"];
-    if (!payloadJson.isObject()) {
-        logMessage(QString("Failed to parse signaling message (invalid or missed 'payload')"));
-        return;
-    }
-
+    logMessage("Processing signaling message...");
+    qDebug() << messageString;
     try {
-        auto type = messageTypeFromString(typeJson.toString());
-        switch (type) {
-            case voip::CallSignalingMessage::Type::callOffer:
-                processCallSignalingMessage(voip::CallOffer::fromJson(payloadJson.toObject()));
-                break;
-
-            case voip::CallSignalingMessage::Type::callAnswer:
-                processCallSignalingMessage(voip::CallAnswer::fromJson(payloadJson.toObject()));
-                break;
-
-            case voip::CallSignalingMessage::Type::callUpdate:
-                logMessage("Call updates are not handled for now");
-                break;
-
-            case voip::CallSignalingMessage::Type::iceCandidate:
-                processCallSignalingMessage(voip::IceCandidate::fromJson(payloadJson.toObject()));
-                break;
-
-            default:
-                throw std::runtime_error("Unexpected message type");
-        }
+        auto signalingMessage = voip::CallSignalingMessage::fromJsonString(messageString.toStdString());
+        m_callManager->processCallSignalingMessage(*signalingMessage);
     } catch (const std::exception &e) {
         logMessage(QString("Failed to parse signaling message: %1").arg(e.what()));
     }
 }
 
 void
-EchoCall::processCallSignalingMessage(const voip::CallSignalingMessage &signalingMessage) {
-
-    switch (signalingMessage.type()) {
-        case voip::CallSignalingMessage::Type::callOffer: {
-            const auto &callOffer = static_cast<const voip::CallOffer &>(signalingMessage);
-            auto incomingCall = m_callManager->createIncomingCall(callOffer);
-            incomingCall->start(
-                    [this, uuid = incomingCall->uuid()]() {
-                        m_incomingCallUuid = std::move(uuid);
-                    },
-                    [this](voip::CallError error) {
-                        logMessage(QString("Call failed to start, error: %1").arg((int)error));
-                    });
-            break;
-        }
-
-        case voip::CallSignalingMessage::Type::callAnswer: {
-            const auto &callAnswer = static_cast<const voip::CallAnswer &>(signalingMessage);
-            m_callManager->processCallAnswer(callAnswer);
-            break;
-        }
-
-        case voip::CallSignalingMessage::Type::iceCandidate: {
-            const auto &iceCandidate = static_cast<const voip::IceCandidate &>(signalingMessage);
-            m_callManager->processIceCandidate(iceCandidate);
-            break;
-        }
-
-        case voip::CallSignalingMessage::Type::callUpdate:
-            break;
-    }
-}
-
-void
 EchoCall::onSignalingMessageReceived(const QString &message) {
-    logMessage("EchoCall::onSignalingMessageReceived()");
-    qDebug() << message;
+    logMessage("Got signaling message.");
     processCallSignalingMessage(message);
 }
 
 void
 EchoCall::onSocketConnected() {
-    logMessage("EchoCall::onSocketConnected()");
+    logMessage("Connected to the signaling server.");
     connect(&m_socket, &QWebSocket::textMessageReceived, this, &EchoCall::onSignalingMessageReceived);
 }
 
 void
 EchoCall::onSocketDisconnected() {
-    logMessage("EchoCall::onSocketDisconnected()");
+    logMessage("Disconnected from the signaling server.");
     disconnect(&m_socket, &QWebSocket::textMessageReceived, this, &EchoCall::onSignalingMessageReceived);
 }
 
 void
 EchoCall::onSocketError(QAbstractSocket::SocketError error) {
-    logMessage(QString("EchoCall::onSocketError(): %1").arg(int(error)));
+    logMessage(QString("Signaling server connection failed with socket error %1.").arg(int(error)));
 }

@@ -120,17 +120,15 @@ Q_SIGNALS:
 
 private:
     void
-    callPhaseChanged(const virgil::voip::Call &call, virgil::voip::CallPhase newPhase);
+    logMessage(const QString &message);
 
     void
-    callConnectionStateChanged(const virgil::voip::Call &call, virgil::voip::CallConnectionState newConnectionState);
+    sendCallSignalingMessage(const virgil::voip::CallSignalingMessage &message);
 
     void
-    callFailed(const virgil::voip::Call &call, virgil::voip::CallError error);
+    processCallSignalingMessage(const QString &messageString);
 
-    void
-    callCreatedSignalingMessage(const virgil::voip::Call &call, const virgil::voip::CallSignalingMessage &message);
-
+private:
     void
     onSignalingMessageReceived(const QString &message);
 
@@ -144,22 +142,8 @@ private:
     onSocketError(QAbstractSocket::SocketError error);
 
 private:
-    void
-    logMessage(const QString &message);
-
-    void
-    sendCallSignalingMessage(const virgil::voip::CallSignalingMessage &message);
-
-    void
-    processCallSignalingMessage(const QString &messageString);
-
-    void
-    processCallSignalingMessage(const virgil::voip::CallSignalingMessage &message);
-
-private:
     std::unique_ptr<virgil::voip::CallManager> m_callManager;
-    QUuid m_incomingCallUuid;
-    QUuid m_activeCallUuid;
+    std::string m_activeCallUuid;
     QWebSocket m_socket;
 
     Action *m_callAction;

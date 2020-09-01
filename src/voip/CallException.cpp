@@ -19,10 +19,10 @@ stringify(CallError callError) {
         CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToSetRemoteSessionDescription);
         CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToExportSessionDescription);
         CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseSessionDescription);
-        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseCallOffer);
-        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseCallAnswer);
-        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseCallUpdate);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseCallSignalingMessage);
         CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseIceCandidate);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToSendCallSignalingMessage);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToConnect);
         CASE_ENUM_VALUE_RETURN_STR(CallError::NoPeerConnection);
         CASE_ENUM_VALUE_RETURN_STR(CallError::UuidMismatch);
     }

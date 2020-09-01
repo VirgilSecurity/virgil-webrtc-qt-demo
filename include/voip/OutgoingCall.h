@@ -17,10 +17,10 @@ public:
     isOutgoing() const noexcept override;
 
     void
-    start(OnSuccessFunc onSuccess, OnFailureFunc onFailure);
+    start();
 
     void
-    accept(const CallAnswer &callAnswer, OnSuccessFunc onSuccess, OnFailureFunc onFailure);
+    accept(const CallAnswer &callAnswer);
 
     void
     remoteDidReceiveCall() noexcept;

@@ -1,18 +1,17 @@
 #include "voip/IncomingCall.h"
 
-#include <QDebug>
-
-#include "voip/CallConnectionFactory.h"
-#include "voip/CallAnswer.h"
-#include "voip/CallException.h"
+#include "CallConnectionFactory.h"
+#include "CallAnswer.h"
+#include "CallReceived.h"
+#include "CallException.h"
 
 #include "Observers.h"
 
 
 using namespace virgil::voip;
 
-IncomingCall::IncomingCall(const CallOffer &callOffer, QString myName)
-    : Call(callOffer.callUUID(), std::move(myName), callOffer.caller()), m_sdpString(callOffer.sdp()) {
+IncomingCall::IncomingCall(const CallOffer &callOffer, std::string myName)
+    : Call(callOffer.callUUID(), std::move(myName), callOffer.caller()), sdpString_(callOffer.sdp()) {
 }
 
 
@@ -23,32 +22,32 @@ IncomingCall::isOutgoing() const noexcept {
 
 
 void
-IncomingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
+IncomingCall::start() {
 
     try {
         CallConnectionFactory::sharedInstance().setupPeerConnection(*this);
 
     } catch (const CallException &callException) {
-        onFailure(callException.error());
+        this->end(callException.error());
         return;
     }
 
-    this->changePhase(CallPhase::ringing);
-
-    auto onSetRemoteDescriptionFailure = [onFailure](webrtc::RTCError error) {
-        qDebug() << "Failed to set an offer session description as remote session description: " << error.message();
-        onFailure(CallError::FailedToSetRemoteSessionDescription);
-    };
-
     auto observer = Observers::makeSetSessionDescriptionObserver(
-            std::move(onSuccess),
-            std::move(onSetRemoteDescriptionFailure));
+            // On Success.
+            [this]() {
+                auto message = CallReceived(this->uuid());
+                this->sendSignalingMessage(message);
+                this->changePhase(CallPhase::started);
+            },
+            // On Failure.
+            [this](webrtc::RTCError) {
+                this->end(CallError::FailedToSetRemoteSessionDescription);
+            });
 
-    this->doPeerConnectionOp([onFailure, observer, sdpString{m_sdpString.toStdString()}](auto peerConnection) mutable {
-        auto sessionDescription = webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, sdpString);
+    this->doPeerConnectionOp([this, observer](auto peerConnection) mutable {
+        auto sessionDescription = webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, sdpString_);
         if (!sessionDescription) {
-            qDebug() << "Can not start an incoming call (failed to parse session description)";
-            onFailure(CallError::FailedToParseSessionDescription);
+            this->end(CallError::FailedToParseSessionDescription);
             return;
         }
 
@@ -56,50 +55,40 @@ IncomingCall::start(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
     });
 }
 
-
 void
-IncomingCall::answer(OnSuccessFunc onSuccess, OnFailureFunc onFailure) {
+IncomingCall::answer() {
 
     this->changePhase(CallPhase::accepted);
 
-    auto onCreateAnswerSuccess = [this, onSuccess, onFailure](webrtc::SessionDescriptionInterface *sdp) {
-        std::string sdpString;
-
-        if (!sdp->ToString(&sdpString)) {
-            onFailure(CallError::FailedToExportSessionDescription);
-            return;
-        }
-
-        auto onSetLocalDescriptionSuccess = [this, onSuccess, onFailure, sdpString = std::move(sdpString)]() {
-            auto message = CallAnswer(this->uuid(), QString::fromStdString(sdpString));
-
-            createdSignalingMessage(message);
-
-            onSuccess();
-        };
-
-        auto onSetLocalDescriptionFailure = [onFailure](webrtc::RTCError error) {
-            qDebug() << "Failed to set an answer session description as local session description: " << error.message();
-            onFailure(CallError::FailedToSetLocalSessionDescription);
-        };
-
-        auto observer = Observers::makeSetSessionDescriptionObserver(
-                std::move(onSetLocalDescriptionSuccess),
-                std::move(onSetLocalDescriptionFailure));
-
-        this->doPeerConnectionOp([observer, sdp](auto peerConnection) mutable {
-            peerConnection->SetLocalDescription(observer.release(), sdp);
-        });
-    };
-
-    auto onCreateAnswerFailure = [=](webrtc::RTCError error) {
-        qDebug() << "Can not create a call offer: " << error.message();
-        onFailure(CallError::FailedToCreateCallAnswer);
-    };
-
     auto observer = Observers::makeCreateSessionDescriptionObserver(
-            std::move(onCreateAnswerSuccess),
-            std::move(onCreateAnswerFailure));
+            // On Success.
+            [this](webrtc::SessionDescriptionInterface *sdp) {
+                std::string sdpString;
+
+                if (!sdp->ToString(&sdpString)) {
+                    this->end(CallError::FailedToExportSessionDescription);
+                    return;
+                }
+
+                auto observer = Observers::makeSetSessionDescriptionObserver(
+                        // On Success.
+                        [this, sdpString = std::move(sdpString)]() {
+                            auto message = CallAnswer(this->uuid(), sdpString);
+                            this->sendSignalingMessage(message);
+                            this->changePhase(CallPhase::accepted);
+                        },
+                        [this](webrtc::RTCError) {
+                            this->end(CallError::FailedToSetLocalSessionDescription);
+                        });
+
+                this->doPeerConnectionOp([observer, sdp](auto peerConnection) mutable {
+                    peerConnection->SetLocalDescription(observer.release(), sdp);
+                });
+            },
+            // On Failure.
+            [this](webrtc::RTCError) {
+                this->end(CallError::FailedToCreateCallAnswer);
+            });
 
 
     auto callOptions = webrtc::PeerConnectionInterface::RTCOfferAnswerOptions();

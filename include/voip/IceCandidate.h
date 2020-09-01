@@ -1,11 +1,6 @@
 #ifndef VIRGIL_VOIP_ICE_CANDIDATE_H_INCLUDED
 #define VIRGIL_VOIP_ICE_CANDIDATE_H_INCLUDED
 
-#include <QDateTime>
-#include <QUuid>
-
-#include <memory>
-
 #include "CallSignalingMessage.h"
 
 namespace virgil {
@@ -13,37 +8,26 @@ namespace voip {
 
 class IceCandidate : public CallSignalingMessage {
 public:
-    IceCandidate(QUuid callUUID, int sdpMLineIndex, QString sdpMid, QString sdp);
+    IceCandidate(std::string callUUID, int sdpMLineIndex, std::string sdpMid, std::string sdp);
 
-    virtual QJsonObject
-    toJson() const override;
+    IceCandidate(std::string callUUID, int sdpMLineIndex, std::string sdpMid, std::string sdp, std::time_t createdAt);
 
     virtual CallSignalingMessage::Type
     type() const noexcept override;
 
-    static IceCandidate
-    fromJson(const QString &jsonString);
-
-    static IceCandidate
-    fromJson(const QJsonObject &json);
-
-    QUuid
-    callUUID() const noexcept;
-
     int
     sdpMLineIndex() const noexcept;
 
-    QString
+    std::string
     sdpMid() const noexcept;
 
-    QString
+    std::string
     sdp() const noexcept;
 
 private:
-    QUuid m_callUUID;
-    int m_sdpMLineIndex;
-    QString m_sdpMid;
-    QString m_sdp;
+    int sdpMLineIndex_;
+    std::string sdpMid_;
+    std::string sdp_;
 };
 
 } // namespace voip

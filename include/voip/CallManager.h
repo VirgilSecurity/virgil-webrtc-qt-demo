@@ -6,15 +6,9 @@
 #include "OutgoingCall.h"
 #include "PlatformAudio.h"
 
-#include "utils/quuid_unordered_map_spec.h"
-
 #include <sigslot/signal.hpp>
 
-#include <QObject>
-#include <QString>
-#include <QUuid>
-
-#include <unordered_map>
+#include <list>
 #include <memory>
 #include <string>
 
@@ -26,33 +20,43 @@ class CallOffer;
 class CallAnswer;
 class IceCandidate;
 
+//
+//  Handles calls lifecycle and events.
+//  Note, a call is added to the manager when created.
+//  Note, a call is removed from the manager when it phase changed to the "ended" or "rejected".
+//  Note, when a call is removed from the manager "callRemoved" event is fired.
+//  Note, a failed call ia kept until it will be removed or recovered over update action.
+//
 class CallManager {
 public:
-    explicit CallManager(QString myId, std::unique_ptr<PlatformAudio> platformAudio = nullptr);
+    explicit CallManager(std::string myId, std::unique_ptr<PlatformAudio> platformAudio = nullptr);
 
-    const QString &
+    const std::string &
     myId() const noexcept;
 
-    std::shared_ptr<OutgoingCall>
-    createOutgoingCall(QString callee);
+    void
+    startOutgoingCall(std::string uuid, std::string callee);
 
-    std::shared_ptr<IncomingCall>
-    createIncomingCall(const CallOffer &callOffer);
+    void
+    startIncomingCall(const CallOffer &callOffer);
 
     std::shared_ptr<Call>
-    findCall(const QUuid &uuid);
+    findCall(const std::string &uuid) noexcept;
 
     std::shared_ptr<IncomingCall>
-    findIncomingCall(const QUuid &uuid);
+    findIncomingCall(const std::string &uuid) noexcept;
 
     std::shared_ptr<OutgoingCall>
-    findOutgoingCall(const QUuid &uuid);
+    findOutgoingCall(const std::string &uuid) noexcept;
+
+    std::list<std::string>
+    callUids() const;
 
     void
-    processCallAnswer(const CallAnswer &callAnswer);
+    removeCall(const std::string &uuid);
 
     void
-    processIceCandidate(const IceCandidate &iceCandidate);
+    processCallSignalingMessage(const CallSignalingMessage &callSignalingMessage);
 
     void
     setMicrophoneOn(bool on);
@@ -69,22 +73,43 @@ public:
     void
     setHoldOn(bool on);
 
-    psigslot::signal<const Call &, CallPhase> callPhaseChanged;
+    psigslot::signal<const Call &> callCreated;
+
+    psigslot::signal<const Call &> callStarted;
+
+    psigslot::signal<const Call &> callReceived;
+
+    psigslot::signal<const Call &> callAccepted;
+
+    psigslot::signal<const Call &, std::optional<CallError>> callEnded;
 
     psigslot::signal<const Call &, CallConnectionState> callConnectionStateChanged;
 
-    psigslot::signal<const Call &, CallError> callFailed;
-
-    psigslot::signal<const Call &, const CallSignalingMessage &> createdMessageToSent;
+    psigslot::signal<const Call &, const CallSignalingMessage &> sendSignalingMessage;
 
 private:
     void
     connectCall(std::shared_ptr<Call> call);
 
+    void
+    processCallOffer(const CallOffer &callOffer);
+
+    void
+    processCallAnswer(const CallAnswer &callAnswer);
+
+    void
+    processCallReceived(const CallReceived &callUpdate);
+
+    void
+    processCallRejected(const CallRejected &callUpdate);
+
+    void
+    processIceCandidate(const IceCandidate &iceCandidate);
+
 private:
-    QString m_myId;
-    std::unique_ptr<PlatformAudio> m_platformAudio;
-    std::unordered_map<QUuid, std::shared_ptr<Call>> m_calls;
+    std::string myId_;
+    std::unique_ptr<PlatformAudio> platformAudio_;
+    std::list<std::shared_ptr<Call>> calls_;
 };
 
 } // namespace voip

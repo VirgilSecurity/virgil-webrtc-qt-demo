@@ -1,36 +1,37 @@
-#include "voip/Call.h"
+#include "Call.h"
 
-#include "voip/CallException.h"
-#include "voip/IceCandidate.h"
-#include "voip/PeerConnectionQueue.h"
+#include "CallException.h"
+#include "IceCandidate.h"
+#include "PeerConnectionQueue.h"
 
+// TODO: Qt logging
 #include <QDebug>
 
 using namespace virgil::voip;
 
-Call::Call(QUuid uuid, QString myName, QString otherName)
-    : m_uuid(std::move(uuid)),
-      m_myName(std::move(myName)),
-      m_otherName(std::move(otherName)),
-      m_phase(CallPhase::initial),
-      m_connectionState(CallConnectionState::none) {
+Call::Call(std::string uuid, std::string myName, std::string otherName)
+    : uuid_(std::move(uuid)),
+      myName_(std::move(myName)),
+      otherName_(std::move(otherName)),
+      phase_(CallPhase::initial),
+      endReason_(CallEndReason::ended),
+      connectionState_(CallConnectionState::none) {
 }
 
 void
 Call::setupPeerConnection(rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection) {
     CallException::throwIfNull(peerConnection, CallError::NoPeerConnection);
 
-    m_peerConnection = peerConnection;
+    peerConnection_ = peerConnection;
+    connectionState_ = CallConnectionState::none;
 }
 
 void
 Call::addRemoteIceCandidate(const IceCandidate &iceCandidate) {
 
-    auto sdpMid = iceCandidate.sdpMid().toStdString();
-    auto sdpMLineIndex = iceCandidate.sdpMLineIndex();
-    auto sdpString = iceCandidate.sdp().toStdString();
-
-    this->doPeerConnectionOp([sdpMid, sdpMLineIndex, sdpString](auto peerConnection) {
+    this->doPeerConnectionOp([sdpMid = iceCandidate.sdpMid(),
+                              sdpMLineIndex = iceCandidate.sdpMLineIndex(),
+                              sdpString = iceCandidate.sdp()](auto peerConnection) {
         webrtc::SdpParseError error = {};
 
         std::unique_ptr<webrtc::IceCandidateInterface> webrtcIceCandidate{
@@ -39,20 +40,38 @@ Call::addRemoteIceCandidate(const IceCandidate &iceCandidate) {
         if (webrtcIceCandidate.get() != nullptr) {
             peerConnection->AddIceCandidate(webrtcIceCandidate.get());
         } else {
-            qWarning() << "Failed to parse ice candidate: " << QString::fromStdString(error.description);
+            throw CallException(CallError::FailedToParseIceCandidate, error.description);
         }
     });
 }
 
 void
-Call::end() noexcept {
+Call::update(const CallReceived &callReceived) {
+    changePhase(CallPhase::received);
+}
+
+void
+Call::update(const CallRejected &callRejected) {
+    endReason_ = CallEndReason::rejected;
+    end();
+}
+
+void
+Call::end(std::optional<CallError> maybeError) noexcept {
     this->doPeerConnectionOp([](auto peerConnection) {
         peerConnection->Close();
     });
 
-    m_peerConnection = nullptr;
-    m_phase = CallPhase::ended;
-    m_connectionState = CallConnectionState::none;
+    peerConnection_ = nullptr;
+    connectionState_ = CallConnectionState::none;
+
+    if (maybeError) {
+        endReason_ = CallEndReason::failed;
+    } else if (!isOutgoing() && (phase_ != CallPhase::accepted)) {
+        endReason_ = CallEndReason::rejected;
+    }
+
+    changePhase(CallPhase::ended, maybeError);
 }
 
 void
@@ -91,22 +110,21 @@ Call::setVoiceOn(bool on) noexcept {
 
 void
 Call::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState newState) {
-    qDebug() << "Call::OnSignalingChange() " << m_uuid.toString() << " " << (int)newState;
+    qDebug() << "!!!Call::OnSignalingChange() " << int(newState);
 }
 
 void
 Call::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface>) {
-    qCritical() << "Call::OnDataChannel() - not supported yet";
 }
 
 void
 Call::OnRenegotiationNeeded() {
-    qDebug() << "Call::OnRenegotiationNeeded()";
+    qDebug() << "!!!Call::OnRenegotiationNeeded()";
 }
 
 void
 Call::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState newState) {
-    qDebug() << "Call::OnConnectionChange()" << (int)newState;
+    qDebug() << "!!!Call::OnConnectionChange() " << int(newState);
 
     switch (newState) {
         case webrtc::PeerConnectionInterface::PeerConnectionState::kNew:
@@ -127,6 +145,7 @@ Call::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState ne
 
         case webrtc::PeerConnectionInterface::PeerConnectionState::kFailed:
             changeConnectionState(CallConnectionState::failed);
+            end(CallError::FailedToConnect);
             break;
 
         case webrtc::PeerConnectionInterface::PeerConnectionState::kClosed:
@@ -134,75 +153,101 @@ Call::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState ne
             break;
 
         default:
-            qWarning() << "Undefined PeerConnectionState: " << (int)newState;
             break;
     }
 }
 
 void
 Call::OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState newState) {
-    qDebug() << "Call::OnIceGatheringChange()" << (int)newState;
+    qDebug() << "!!!Call::OnIceGatheringChange() " << int(newState);
 }
 
 void
 Call::OnIceCandidate(const webrtc::IceCandidateInterface *candidate) {
-    qDebug() << "Call::OnIceCandidate()";
-
     std::string sdpString;
 
     if (!candidate->ToString(&sdpString)) {
-        qCritical() << "Failed to export session description of an ice candidate";
+        end(CallError::FailedToExportSessionDescription);
         return;
     }
 
-    auto sdpMid = QString::fromStdString(candidate->sdp_mid());
-    auto sdp = QString::fromStdString(sdpString);
+    auto iceCandidate =
+            IceCandidate(this->uuid(), candidate->sdp_mline_index(), candidate->sdp_mid(), std::move(sdpString));
 
-
-    auto iceCandidate = IceCandidate(this->uuid(), candidate->sdp_mline_index(), std::move(sdpMid), std::move(sdp));
-
-    this->createdSignalingMessage(iceCandidate);
+    this->sendSignalingMessage(iceCandidate);
 }
 
 void
-Call::changePhase(CallPhase newPhase) noexcept {
-    if (newPhase != m_phase) {
-        m_phase = newPhase;
-        Q_EMIT phaseChanged(m_phase);
+Call::changePhase(CallPhase newPhase, std::optional<CallError> maybeError) noexcept {
+    if (newPhase == phase_) {
+        return;
+    }
+
+    switch (phase_ = newPhase) {
+        case CallPhase::initial:
+            break;
+
+        case CallPhase::started:
+            this->started();
+            break;
+
+        case CallPhase::received:
+            this->received();
+            break;
+
+        case CallPhase::accepted:
+            this->accepted();
+            break;
+
+        case CallPhase::ended:
+            this->ended(maybeError);
+            break;
     }
 }
 
 void
 Call::changeConnectionState(CallConnectionState newState) noexcept {
-    if (newState != m_connectionState) {
-        m_connectionState = newState;
-        connectionStateChanged(m_connectionState);
+    if (newState != connectionState_) {
+        connectionState_ = newState;
+        connectionStateChanged(connectionState_);
     }
 }
 
-QUuid
+std::string
 Call::uuid() const noexcept {
-    return m_uuid;
+    return uuid_;
 }
 
-QString
+std::string
 Call::myName() const noexcept {
-    return m_myName;
+    return myName_;
 }
 
-QString
+std::string
 Call::otherName() const noexcept {
-    return m_otherName;
+    return otherName_;
 }
 
-std::optional<QDateTime>
+std::optional<std::time_t>
 Call::connectedAt() const noexcept {
-    return m_connectedAt;
+    return connectedAt_;
+}
+
+CallPhase
+Call::phase() const noexcept {
+    return phase_;
+}
+
+CallEndReason
+Call::endReason() const noexcept {
+    return endReason_;
 }
 
 void
 Call::doPeerConnectionOp(std::function<void(rtc::scoped_refptr<webrtc::PeerConnectionInterface>)> op) {
-    PeerConnectionQueue::sharedInstance().dispatch([peerConnection = m_peerConnection, op] {
-        op(peerConnection);
-    });
+    if (peerConnection_) {
+        PeerConnectionQueue::sharedInstance().dispatch([peerConnection = peerConnection_, op] {
+            op(peerConnection);
+        });
+    }
 }

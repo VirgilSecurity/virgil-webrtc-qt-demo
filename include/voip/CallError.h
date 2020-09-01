@@ -13,10 +13,10 @@ enum class CallError {
     FailedToSetRemoteSessionDescription,
     FailedToExportSessionDescription,
     FailedToParseSessionDescription,
-    FailedToParseCallOffer,
-    FailedToParseCallAnswer,
-    FailedToParseCallUpdate,
+    FailedToParseCallSignalingMessage,
     FailedToParseIceCandidate,
+    FailedToSendCallSignalingMessage,
+    FailedToConnect,
     NoPeerConnection,
     UuidMismatch
 };

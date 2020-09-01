@@ -1,33 +1,37 @@
 #ifndef VIRGIL_VOIP_CALL_H_INCLUDED
 #define VIRGIL_VOIP_CALL_H_INCLUDED
 
-#include <QDateTime>
-#include <QObject>
-#include <QUuid>
-
-#include <optional>
-#include <vector>
+#include "CallError.h"
+#include "CallSignalingMessage.h"
+#include "IceCandidate.h"
+#include "CallReceived.h"
+#include "CallRejected.h"
 
 #include <webrtc/api/peer_connection_interface.h>
 #include <webrtc/rtc_base/critical_section.h>
 #include <webrtc/rtc_base/thread_checker.h>
+
 #include <sigslot/signal.hpp>
 
-#include "CallError.h"
-#include "CallSignalingMessage.h"
-#include "IceCandidate.h"
-
+#include <optional>
+#include <vector>
+#include <ctime>
 
 namespace virgil {
 namespace voip {
 
 enum class CallPhase {
-    initial,  // the call was initiated
-    calling,  // the call was initiated, but the caller is not available for now
-    ringing,  // the caller is hearing the call
-    accepted, // the caller has been accepted the call
-    ended,    // call was ended
-    failed,
+    initial,  // a call was initiated
+    started,  // a call was started
+    received, // a caller is hearing a call
+    accepted, // a caller has been accepted a call
+    ended,    // a call was ended after acceptance
+};
+
+enum class CallEndReason {
+    ended,    // a call was ended after be accepted
+    rejected, // a call was ended before be accepted
+    failed,   // a call was failed
 };
 
 enum class CallConnectionState {
@@ -45,11 +49,7 @@ enum class CallConnectionState {
  */
 class Call : public webrtc::PeerConnectionObserver {
 public:
-    using OnSuccessFunc = std::function<void()>;
-    using OnFailureFunc = std::function<void(CallError error)>;
-
-
-    Call(QUuid uuid, QString myName, QString otherName);
+    Call(std::string uuid, std::string myName, std::string otherName);
     virtual ~Call() = default;
 
     virtual bool
@@ -62,7 +62,13 @@ public:
     addRemoteIceCandidate(const IceCandidate &iceCandidate);
 
     void
-    end() noexcept;
+    update(const CallReceived &callReceived);
+
+    void
+    update(const CallRejected &callRejected);
+
+    void
+    end(std::optional<CallError> maybeError = std::optional<CallError>()) noexcept;
 
     void
     setHoldOn(bool on) noexcept;
@@ -73,17 +79,23 @@ public:
     void
     setVoiceOn(bool on) noexcept;
 
-    QUuid
+    std::string
     uuid() const noexcept;
 
-    QString
+    std::string
     myName() const noexcept;
 
-    QString
+    std::string
     otherName() const noexcept;
 
-    std::optional<QDateTime>
+    std::optional<std::time_t>
     connectedAt() const noexcept;
+
+    CallPhase
+    phase() const noexcept;
+
+    CallEndReason
+    endReason() const noexcept;
 
 public:
     virtual void
@@ -104,33 +116,40 @@ public:
     virtual void
     OnIceCandidate(const webrtc::IceCandidateInterface *candidate) override;
 
-    psigslot::signal<CallPhase> phaseChanged;
+    psigslot::signal<> started;
+
+    psigslot::signal<> received;
+
+    psigslot::signal<> accepted;
+
+    psigslot::signal<std::optional<CallError>> ended;
 
     psigslot::signal<CallConnectionState> connectionStateChanged;
 
-    psigslot::signal<const CallSignalingMessage &> createdSignalingMessage;
+    psigslot::signal<const CallSignalingMessage &> sendSignalingMessage;
 
 protected:
     void
-    changePhase(CallPhase newPhase) noexcept;
+    changePhase(CallPhase newPhase, std::optional<CallError> maybeError = std::optional<CallError>()) noexcept;
 
     void
     changeConnectionState(CallConnectionState newState) noexcept;
 
     void
-    doPeerConnectionOp(std::function<void(rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection)> op);
+    doPeerConnectionOp(std::function<void(rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection_)> op);
 
 private:
-    QUuid m_uuid;
-    QString m_myName;
-    QString m_otherName;
+    std::string uuid_;
+    std::string myName_;
+    std::string otherName_;
 
-    CallPhase m_phase;
-    CallConnectionState m_connectionState;
+    CallPhase phase_;
+    CallEndReason endReason_;
+    CallConnectionState connectionState_;
 
-    std::optional<QDateTime> m_connectedAt;
+    std::optional<std::time_t> connectedAt_;
 
-    rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection;
+    rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection_;
 };
 
 } // namespace voip

@@ -1,11 +1,6 @@
 #ifndef VIRGIL_VOIP_CALL_ANSWER_H_INCLUDED
 #define VIRGIL_VOIP_CALL_ANSWER_H_INCLUDED
 
-#include <QDateTime>
-#include <QUuid>
-
-#include <memory>
-
 #include "CallSignalingMessage.h"
 
 namespace virgil {
@@ -13,29 +8,18 @@ namespace voip {
 
 class CallAnswer : public CallSignalingMessage {
 public:
-    CallAnswer(QUuid callUUID, QString sdp);
+    CallAnswer(std::string callUUID, std::string sdp);
 
-    virtual QJsonObject
-    toJson() const override;
+    CallAnswer(std::string callUUID, std::string sdp, std::time_t createdAt);
 
     virtual CallSignalingMessage::Type
     type() const noexcept override;
 
-    static CallAnswer
-    fromJson(const QString &jsonString);
-
-    static CallAnswer
-    fromJson(const QJsonObject &json);
-
-    QUuid
-    callUUID() const noexcept;
-
-    QString
+    std::string
     sdp() const noexcept;
 
 private:
-    QUuid m_callUUID;
-    QString m_sdp;
+    std::string sdp_;
 };
 
 } // namespace voip

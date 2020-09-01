@@ -1,93 +1,151 @@
 #include "voip/CallManager.h"
 
-#include <QDebug>
-
-#include "voip/Call.h"
-#include "voip/OutgoingCall.h"
-#include "voip/IncomingCall.h"
-#include "voip/CallConnectionFactory.h"
+#include "Call.h"
+#include "OutgoingCall.h"
+#include "IncomingCall.h"
+#include "CallConnectionFactory.h"
 
 using namespace virgil::voip;
 
 
-CallManager::CallManager(QString myId, std::unique_ptr<PlatformAudio> platformAudio)
-    : m_myId(std::move(myId)), m_platformAudio(std::move(platformAudio)) {
-    if (!m_platformAudio) {
-        m_platformAudio = PlatformAudio::createDefault();
+CallManager::CallManager(std::string myId, std::unique_ptr<PlatformAudio> platformAudio)
+    : myId_(std::move(myId)), platformAudio_(std::move(platformAudio)) {
+    if (!platformAudio_) {
+        platformAudio_ = PlatformAudio::createDefault();
     }
 }
 
-const QString &
+const std::string &
 CallManager::myId() const noexcept {
-    return m_myId;
+    return myId_;
 }
 
-std::shared_ptr<OutgoingCall>
-CallManager::createOutgoingCall(QString callee) {
-    auto callUUID = QUuid::createUuid();
-
-    auto outgoingCall = std::make_shared<OutgoingCall>(std::move(callUUID), m_myId, std::move(callee));
+void
+CallManager::startOutgoingCall(std::string callUUID, std::string callee) {
+    auto outgoingCall = std::make_shared<OutgoingCall>(std::move(callUUID), myId_, std::move(callee));
 
     this->connectCall(outgoingCall);
 
-    m_calls[outgoingCall->uuid()] = outgoingCall;
+    calls_.push_back(outgoingCall);
 
-    return outgoingCall;
+    this->callCreated(*outgoingCall);
+
+    outgoingCall->start();
 }
 
-std::shared_ptr<IncomingCall>
-CallManager::createIncomingCall(const CallOffer &callOffer) {
-    auto incomingCall = std::make_shared<IncomingCall>(callOffer, m_myId);
+void
+CallManager::startIncomingCall(const CallOffer &callOffer) {
+    auto incomingCall = std::make_shared<IncomingCall>(callOffer, myId_);
 
     this->connectCall(incomingCall);
 
-    m_calls[incomingCall->uuid()] = incomingCall;
+    calls_.push_back(incomingCall);
 
-    return incomingCall;
+    this->callCreated(*incomingCall);
+
+    incomingCall->start();
 }
 
 std::shared_ptr<Call>
-CallManager::findCall(const QUuid &uuid) {
-    auto call = m_calls.find(uuid);
-    if (call != m_calls.end()) {
-        return call->second;
-    }
+CallManager::findCall(const std::string &uuid) noexcept {
+    auto callIt = std::find_if(std::begin(calls_), std::end(calls_), [&uuid](const auto &call) {
+        return call->uuid() == uuid;
+    });
 
-    return nullptr;
+    if (callIt != std::end(calls_)) {
+        return *callIt;
+    } else {
+        return nullptr;
+    }
 }
 
 
 std::shared_ptr<IncomingCall>
-CallManager::findIncomingCall(const QUuid &uuid) {
-    auto call = m_calls.find(uuid);
-    if (call != m_calls.end() && !call->second->isOutgoing()) {
-        return std::static_pointer_cast<IncomingCall>(call->second);
+CallManager::findIncomingCall(const std::string &uuid) noexcept {
+    auto call = findCall(uuid);
+    if (call && !call->isOutgoing()) {
+        return std::static_pointer_cast<IncomingCall>(call);
     }
 
     return nullptr;
 }
 
 std::shared_ptr<OutgoingCall>
-CallManager::findOutgoingCall(const QUuid &uuid) {
-    auto call = m_calls.find(uuid);
-    if (call != m_calls.end() && call->second->isOutgoing()) {
-        return std::static_pointer_cast<OutgoingCall>(call->second);
+CallManager::findOutgoingCall(const std::string &uuid) noexcept {
+    auto call = findCall(uuid);
+    if (call && call->isOutgoing()) {
+        return std::static_pointer_cast<OutgoingCall>(call);
     }
 
     return nullptr;
+}
+
+std::list<std::string>
+CallManager::callUids() const {
+    std::list<std::string> uids;
+    for (const auto &call : calls_) {
+        uids.emplace_back(call->uuid());
+    }
+    return uids;
+}
+
+void
+CallManager::removeCall(const std::string &uuid) {
+    std::remove_if(std::begin(calls_), std::end(calls_), [&uuid](const auto &call) {
+        return call->uuid() == uuid;
+    });
+}
+
+void
+CallManager::processCallSignalingMessage(const CallSignalingMessage &callSignalingMessage) {
+    auto type = callSignalingMessage.type();
+    switch (type) {
+        case voip::CallSignalingMessage::Type::callOffer:
+            return processCallOffer(static_cast<const CallOffer &>(callSignalingMessage));
+
+        case voip::CallSignalingMessage::Type::callAnswer:
+            return processCallAnswer(static_cast<const CallAnswer &>(callSignalingMessage));
+
+        case voip::CallSignalingMessage::Type::callReceived:
+            return processCallReceived(static_cast<const CallReceived &>(callSignalingMessage));
+
+        case voip::CallSignalingMessage::Type::callRejected:
+            return processCallRejected(static_cast<const CallRejected &>(callSignalingMessage));
+
+        case voip::CallSignalingMessage::Type::iceCandidate:
+            return processIceCandidate(static_cast<const IceCandidate &>(callSignalingMessage));
+
+        default:
+            throw std::runtime_error("Unexpected message type");
+    }
+}
+
+void
+CallManager::processCallOffer(const CallOffer &callOffer) {
+    startIncomingCall(callOffer);
 }
 
 void
 CallManager::processCallAnswer(const CallAnswer &callAnswer) {
     auto call = findOutgoingCall(callAnswer.callUUID());
     if (call) {
-        call->accept(
-                callAnswer,
-                [] {
-                },
-                [this, call](CallError error) {
-                    callFailed(*call, error);
-                });
+        call->accept(callAnswer);
+    }
+}
+
+void
+CallManager::processCallReceived(const CallReceived &callUpdate) {
+    auto call = findOutgoingCall(callUpdate.callUUID());
+    if (call) {
+        call->update(callUpdate);
+    }
+}
+
+void
+CallManager::processCallRejected(const CallRejected &callUpdate) {
+    auto call = findOutgoingCall(callUpdate.callUUID());
+    if (call) {
+        call->update(callUpdate);
     }
 }
 
@@ -101,50 +159,59 @@ CallManager::processIceCandidate(const IceCandidate &iceCandidate) {
 
 void
 CallManager::setMicrophoneOn(bool on) {
-    for (const auto &callIt : m_calls) {
-        auto call = callIt.second;
+    for (const auto &call : calls_) {
         call->setMicrophoneOn(on);
     }
 }
 
 void
 CallManager::setVoiceOn(bool on) {
-    for (const auto &callIt : m_calls) {
-        auto call = callIt.second;
+    for (const auto &call : calls_) {
         call->setVoiceOn(on);
     }
 }
 
 bool
 CallManager::hasSpeaker() const {
-    return m_platformAudio->hasSpeaker();
+    return platformAudio_->hasSpeaker();
 }
 
 void
 CallManager::setSpeakerOn(bool on) {
-    m_platformAudio->setSpeakerOn(on);
+    platformAudio_->setSpeakerOn(on);
 }
 
 void
 CallManager::setHoldOn(bool on) {
-    for (const auto &callIt : m_calls) {
-        auto call = callIt.second;
+    for (const auto &call : calls_) {
         call->setHoldOn(on);
     }
 }
 
 void
 CallManager::connectCall(std::shared_ptr<Call> call) {
+    call->started.connect([this, call]() {
+        this->callStarted(*call);
+    });
 
-    call->phaseChanged.connect([this, call](CallPhase newPhase) {
-        this->callPhaseChanged(*call, newPhase);
+    call->received.connect([this, call]() {
+        this->callReceived(*call);
+    });
+
+    call->accepted.connect([this, call]() {
+        this->callAccepted(*call);
+    });
+
+    call->ended.connect([this, call](std::optional<CallError> maybeError) {
+        this->callEnded(*call, maybeError);
+        this->removeCall(call->uuid());
     });
 
     call->connectionStateChanged.connect([this, call](CallConnectionState newConnectionState) {
         this->callConnectionStateChanged(*call, newConnectionState);
     });
 
-    call->createdSignalingMessage.connect([this, call](const CallSignalingMessage &signalingMessage) {
-        this->createdMessageToSent(*call, signalingMessage);
+    call->sendSignalingMessage.connect([this, call](const CallSignalingMessage &signalingMessage) {
+        this->sendSignalingMessage(*call, signalingMessage);
     });
 }
