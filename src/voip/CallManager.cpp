@@ -42,19 +42,6 @@ CallManager::startOutgoingCall(std::string callUUID, std::string callee) {
 }
 
 void
-CallManager::startOutgoingCallFromSystem(std::string callUUID, std::string callee) {
-    auto outgoingCall = std::make_shared<OutgoingCall>(std::move(callUUID), myId_, std::move(callee));
-
-    this->connectCall(outgoingCall);
-
-    calls_.push_back(outgoingCall);
-
-    this->callCreated(*outgoingCall);
-
-    outgoingCall->start();
-}
-
-void
 CallManager::startIncomingCall(const CallOffer &callOffer) {
     auto incomingCall = std::make_shared<IncomingCall>(callOffer, myId_);
 
@@ -291,15 +278,6 @@ CallManager::connectPlatformCallManager() {
                 if (call) {
                     call->die(CallError::FailedToStartSystemCall);
                 }
-            }));
-
-
-    //
-    //  Handle signal: didRequestCallStart.
-    //
-    slotConnections.emplace_back(platformCallManager.didRequestCallStart.connect(
-            [this](const std::string &callUUID, const std::string &callee) {
-                this->startOutgoingCallFromSystem(callUUID, callee);
             }));
 
     //

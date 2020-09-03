@@ -95,9 +95,6 @@ private:
     connectPlatformCallManager();
 
     void
-    startOutgoingCallFromSystem(std::string uuid, std::string callee);
-
-    void
     connectCall(std::shared_ptr<Call> call);
 
     void

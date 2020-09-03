@@ -62,7 +62,7 @@ to_utf8(const std::string &str) {
 - (void)provider:(CXProvider *)provider performStartCallAction:(CXStartCallAction *)action {
     (void)provider;
     std::string callUUID = objc::to_utf8(action.callUUID.UUIDString.lowercaseString);
-    self.platformCallManager->didRequestCallStart(callUUID, objc::to_utf8(action.handle.value));
+    self.platformCallManager->didStartOutgoingCall(callUUID);
     [action fulfill];
 }
 
@@ -203,10 +203,7 @@ PlatformCallManagerIOS::tellSystemStartOutgoingCall(const std::string &callUUID,
                     completion:^(NSError *_Nullable error) {
                       if (auto impl = weakImpl.lock()) {
                           auto callUUID = objc::to_utf8(uuid.UUIDString.lowercaseString);
-                          if (!error) {
-                              impl->callDelegate.platformCallManager->didStartOutgoingCall(callUUID);
-
-                          } else {
+                          if (error) {
                               auto description = objc::to_utf8([error localizedDescription]);
                               impl->callDelegate.platformCallManager->didFailStartCall(callUUID, description);
                           }
