@@ -10,7 +10,8 @@ namespace nlohmann {
 //
 // CallOffer.
 //
-template <> struct adl_serializer<virgi::voip::CallOffer> {
+template <>
+struct adl_serializer<virgi::voip::CallOffer> {
     static virgi::voip::CallOffer
     from_json(const json &j) {
         return {j.get<int>()};

@@ -29,7 +29,10 @@ class IceCandidate;
 //
 class CallManager {
 public:
-    explicit CallManager(std::string myId, std::unique_ptr<PlatformAudio> platformAudio = nullptr);
+    explicit CallManager(
+            std::string myId,
+            const ::std::string &appName,
+            std::unique_ptr<PlatformAudio> platformAudio = nullptr);
 
     const std::string &
     myId() const noexcept;
@@ -53,9 +56,6 @@ public:
     callUids() const;
 
     void
-    removeCall(const std::string &uuid);
-
-    void
     processCallSignalingMessage(const CallSignalingMessage &callSignalingMessage);
 
     void
@@ -73,6 +73,9 @@ public:
     void
     setHoldOn(bool on);
 
+    void
+    terminateAllCalls();
+
     psigslot::signal<const Call &> callCreated;
 
     psigslot::signal<const Call &> callStarted;
@@ -88,6 +91,12 @@ public:
     psigslot::signal<const Call &, const CallSignalingMessage &> sendSignalingMessage;
 
 private:
+    void
+    connectPlatformCallManager();
+
+    void
+    startOutgoingCallFromSystem(std::string uuid, std::string callee);
+
     void
     connectCall(std::shared_ptr<Call> call);
 
@@ -109,10 +118,14 @@ private:
     void
     processIceCandidate(const IceCandidate &iceCandidate);
 
+    void
+    removeCall(const std::string &uuid);
+
 private:
     std::string myId_;
     std::unique_ptr<PlatformAudio> platformAudio_;
     std::list<std::shared_ptr<Call>> calls_;
+    std::list<psigslot::scoped_connection> slotConnections;
 };
 
 } // namespace voip

@@ -19,7 +19,7 @@ generateUniqueId() {
 
 EchoCall::EchoCall(QObject *parent)
     : QObject(parent),
-      m_callManager(std::make_unique<voip::CallManager>(generateUniqueId())),
+      m_callManager(std::make_unique<voip::CallManager>(generateUniqueId(), "Virgil")),
       m_callAction(new Action(this)),
       m_answerAction(new Action(this)),
       m_endAction(new Action(this)),
@@ -65,6 +65,7 @@ EchoCall::EchoCall(QObject *parent)
         } else {
             this->logMessage("An incoming call was accepted.");
         }
+        m_answerAction->setEnabled(false);
     });
 
     m_callManager->callReceived.connect([this](const voip::Call &call) {
@@ -157,11 +158,13 @@ EchoCall::EchoCall(QObject *parent)
     //
     //  Init socket.
     //
+    connect(this, &EchoCall::reconnectSignalingServer, this, &EchoCall::onReconnectSignalingServer);
+    connect(this, &EchoCall::sendToSignalingServer, this, &EchoCall::onSendToSignalingServer);
     connect(&m_socket, &QWebSocket::connected, this, &EchoCall::onSocketConnected);
     connect(&m_socket, &QWebSocket::disconnected, this, &EchoCall::onSocketDisconnected);
     connect(&m_socket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error), this, &EchoCall::onSocketError);
 
-    m_socket.open(QUrl("ws://165.232.68.63:8080"));
+    Q_EMIT reconnectSignalingServer();
 }
 
 
@@ -271,9 +274,7 @@ EchoCall::sendCallSignalingMessage(const voip::CallSignalingMessage &message) {
     //
     //  Send message.
     //
-    auto sentBytes = m_socket.sendTextMessage(QString::fromStdString(messageStr));
-    qDebug() << QString("Sent %1 bytes to the socket").arg(sentBytes);
-    m_socket.flush();
+    Q_EMIT sendToSignalingServer(QString::fromStdString(messageStr));
 }
 
 void
@@ -286,6 +287,22 @@ EchoCall::processCallSignalingMessage(const QString &messageString) {
     } catch (const std::exception &e) {
         logMessage(QString("Failed to parse signaling message: %1").arg(e.what()));
     }
+}
+
+void
+EchoCall::onReconnectSignalingServer() {
+    logMessage("Connecting to the signaling server...");
+    qDebug() << "Connecting to the signaling server...";
+    m_socket.abort();
+    m_socket.abort();
+    m_socket.open(QUrl("ws://165.232.68.63:8080"));
+}
+
+void
+EchoCall::onSendToSignalingServer(QString message) {
+    auto sentBytes = m_socket.sendTextMessage(message);
+    qDebug() << QString("Sent %1 bytes to the socket").arg(sentBytes);
+    m_socket.flush();
 }
 
 void
@@ -309,4 +326,5 @@ EchoCall::onSocketDisconnected() {
 void
 EchoCall::onSocketError(QAbstractSocket::SocketError error) {
     logMessage(QString("Signaling server connection failed with socket error %1.").arg(int(error)));
+    Q_EMIT reconnectSignalingServer();
 }

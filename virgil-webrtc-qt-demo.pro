@@ -28,6 +28,7 @@ HEADERS += \
     include/voip/IncomingCall.h \
     include/voip/OutgoingCall.h \
     include/voip/PlatformAudio.h \
+    include/voip/PlatformCallManager.h \
     include/voip/PlatformError.h \
     include/voip/PlatformException.h \
     src/queue/dispatch_queue.h \
@@ -79,9 +80,11 @@ macx {
     LIBS += -framework Foundation -framework CoreServices -framework ApplicationServices -framework CoreAudio -framework AudioToolbox
     DEFINES += WEBRTC_MAC WEBRTC_POSIX WEBRTC_UNIX
     HEADERS += \
-        src/voip/PlatformAudioWebRtc.h
+        src/voip/PlatformAudioWebRtc.h \
+        src/voip/PlatformCallManagerDefault.h
     SOURCES += \
-        src/voip/PlatformAudioWebRtc.cpp
+        src/voip/PlatformAudioWebRtc.cpp \
+        src/voip/PlatformCallManagerDefault.cpp
 }
 
 linux:!android {
@@ -95,9 +98,11 @@ linux:!android {
             -framework AudioToolbox
     DEFINES += WEBRTC_MAC WEBRTC_POSIX WEBRTC_UNIX
     HEADERS += \
-        src/voip/PlatformAudioWebRtc.h
+        src/voip/PlatformAudioWebRtc.h \
+        src/voip/PlatformCallManagerDefault.h
     SOURCES += \
-        src/voip/PlatformAudioWebRtc.cpp
+        src/voip/PlatformAudioWebRtc.cpp \
+        src/voip/PlatformCallManagerDefault.cpp
 }
 
 android {
@@ -111,10 +116,12 @@ android {
     ANDROID_API_VERSION = 9
     DEFINES += WEBRTC_LINUX WEBRTC_ANDROID WEBRTC_POSIX
     HEADERS += \
-        src/voip/android/PlatformAudioAndroid.h
+        src/voip/android/PlatformAudioAndroid.h \
+        src/voip/PlatformCallManagerDefault.h
     SOURCES += \
         src/jni/init_android.cpp \
-        src/voip/android/PlatformAudioAndroid.cpp
+        src/voip/android/PlatformAudioAndroid.cpp \
+        src/voip/PlatformCallManagerDefault.cpp
 }
 
 ios {
@@ -122,21 +129,28 @@ ios {
     WEBRTC_LIB_SUBDIR = "ios"
     QMAKE_INFO_PLIST = $$PWD/ios/Info.plist
     QMAKE_LFLAGS += -force_load $$PWD/3rdparty/WebRTC/ios/lib/libwebrtc_d.a
-    LIBS += -framework Foundation -framework CoreServices -framework CoreAudio -framework AudioToolbox -framework AVFoundation -framework CoreMedia
+    QMAKE_OBJECTIVE_CFLAGS += -fobjc-arc
+    LIBS += -framework Foundation \
+            -framework CoreServices \
+            -framework CoreAudio \
+            -framework AudioToolbox \
+            -framework AVFoundation \
+            -framework CoreMedia \
+            -framework CallKit
     DEFINES += WEBRTC_MAC WEBRTC_IOS WEBRTC_POSIX WEBRTC_UNIX
     INCLUDEPATH += \
         $$PWD/3rdparty/WebRTC/ios/include/webrtc/sdk/objc/base
     HEADERS += \
-        src/voip/ios/PlatformAudioIOS.h
-    SOURCES += \
-        src/voip/ios/PlatformAudioIOS.mm
+        src/voip/ios/PlatformAudioIOS.h \
+        src/voip/ios/PlatformCallManagerIOS.h
+    OBJECTIVE_SOURCES += \
+        src/voip/ios/PlatformAudioIOS.mm \
+        src/voip/ios/PlatformCallManagerIOS.mm
 }
 
-INCLUDEPATH += \
+QMAKE_INCDIR += \
     $$PWD/3rdparty \
     $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include \
     $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include/webrtc \
     $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include/webrtc/third_party \
     $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include/webrtc/third_party/abseil-cpp
-
-DEPENDPATH += $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include

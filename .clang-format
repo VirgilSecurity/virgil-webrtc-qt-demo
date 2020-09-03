@@ -1,13 +1,14 @@
 ---
-Language:        Cpp
 BasedOnStyle:    LLVM
-Standard:        Auto
-TabWidth:        4
 UseTab:          Never
-ColumnLimit:     120
 IndentWidth:     4
-IndentCaseLabels: true
+TabWidth:        4
+ColumnLimit:     120
+---
+Language:        Cpp
+Standard:        Auto
 ContinuationIndentWidth: 8
+IndentCaseLabels: true
 AllowShortFunctionsOnASingleLine : false
 DerivePointerAlignment: false
 PointerAlignment: Right
@@ -16,6 +17,43 @@ AccessModifierOffset: -4
 BinPackArguments: false
 BinPackParameters: false
 AlwaysBreakBeforeMultilineStrings: true
+AlwaysBreakTemplateDeclarations: true
+MaxEmptyLinesToKeep: 2
+AlwaysBreakAfterReturnType: All
+SortIncludes: false
+BreakBeforeBraces: Custom
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+AllowShortLambdasOnASingleLine: None
+AllowShortBlocksOnASingleLine: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BraceWrapping:
+  AfterClass:      false
+  AfterControlStatement: false
+  AfterEnum:       false
+  AfterFunction:   false
+  AfterNamespace:  false
+  AfterObjCDeclaration: false
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     false
+  BeforeElse:      false
+  IndentBraces:    false
+  AfterCaseLabel:  false
+---
+Language:        ObjC
+Standard:        Auto
+ContinuationIndentWidth: 8
+IndentCaseLabels: true
+AllowShortFunctionsOnASingleLine : false
+DerivePointerAlignment: false
+PointerAlignment: Right
+AlignAfterOpenBracket: AlwaysBreak
+AccessModifierOffset: -4
+BinPackArguments: false
+BinPackParameters: false
+AlwaysBreakBeforeMultilineStrings: true
+AlwaysBreakTemplateDeclarations: true
 MaxEmptyLinesToKeep: 2
 AlwaysBreakAfterReturnType: All
 SortIncludes: false

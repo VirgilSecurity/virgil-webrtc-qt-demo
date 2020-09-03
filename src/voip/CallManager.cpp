@@ -1,18 +1,26 @@
-#include "voip/CallManager.h"
+#include "CallManager.h"
 
 #include "Call.h"
 #include "OutgoingCall.h"
 #include "IncomingCall.h"
 #include "CallConnectionFactory.h"
+#include "PlatformCallManager.h"
 
 using namespace virgil::voip;
 
 
-CallManager::CallManager(std::string myId, std::unique_ptr<PlatformAudio> platformAudio)
-    : myId_(std::move(myId)), platformAudio_(std::move(platformAudio)) {
+CallManager::CallManager(std::string myId, const std::string &appName, std::unique_ptr<PlatformAudio> platformAudio)
+    : myId_{std::move(myId)}, platformAudio_{std::move(platformAudio)}, calls_{} {
+
     if (!platformAudio_) {
         platformAudio_ = PlatformAudio::createDefault();
     }
+
+    //
+    //  Register.
+    //
+    PlatformCallManager::sharedInstance().tellSystemRegisterApplication(appName);
+    connectPlatformCallManager();
 }
 
 const std::string &
@@ -22,6 +30,19 @@ CallManager::myId() const noexcept {
 
 void
 CallManager::startOutgoingCall(std::string callUUID, std::string callee) {
+    auto outgoingCall = std::make_shared<OutgoingCall>(std::move(callUUID), myId_, std::move(callee));
+
+    this->connectCall(outgoingCall);
+
+    calls_.push_back(outgoingCall);
+
+    this->callCreated(*outgoingCall);
+
+    PlatformCallManager::sharedInstance().tellSystemStartOutgoingCall(outgoingCall->uuid(), outgoingCall->otherName());
+}
+
+void
+CallManager::startOutgoingCallFromSystem(std::string callUUID, std::string callee) {
     auto outgoingCall = std::make_shared<OutgoingCall>(std::move(callUUID), myId_, std::move(callee));
 
     this->connectCall(outgoingCall);
@@ -43,7 +64,7 @@ CallManager::startIncomingCall(const CallOffer &callOffer) {
 
     this->callCreated(*incomingCall);
 
-    incomingCall->start();
+    PlatformCallManager::sharedInstance().tellSystemStartIncomingCall(incomingCall->uuid(), incomingCall->otherName());
 }
 
 std::shared_ptr<Call>
@@ -154,7 +175,7 @@ CallManager::processCallRejected(const CallRejected &callUpdate) {
 
 void
 CallManager::processCallEnded(const CallEnded &callUpdate) {
-    auto call = findOutgoingCall(callUpdate.callUUID());
+    auto call = findCall(callUpdate.callUUID());
     if (call) {
         call->update(callUpdate);
     }
@@ -200,6 +221,137 @@ CallManager::setHoldOn(bool on) {
 }
 
 void
+CallManager::terminateAllCalls() {
+    for (auto &call : calls_) {
+        call->end();
+    }
+}
+
+void
+CallManager::connectPlatformCallManager() {
+
+    auto &platformCallManager = PlatformCallManager::sharedInstance();
+
+    //
+    //  Handle signal: isReady.
+    //
+    slotConnections.emplace_back(platformCallManager.isReady.connect([this]() {
+        // MAYBE we need to propagate this signal.
+    }));
+
+    //
+    //  Handle signal: didRequestReset.
+    //
+    slotConnections.emplace_back(platformCallManager.didRequestReset.connect([this]() {
+        this->terminateAllCalls();
+    }));
+
+    //
+    //  Handle signal: didStartIncomingCall.
+    //
+    slotConnections.emplace_back(platformCallManager.didStartIncomingCall.connect([this](const std::string &callUUID) {
+        auto incomingCall = findIncomingCall(callUUID);
+        if (incomingCall) {
+            incomingCall->start();
+        } else {
+            PlatformCallManager::sharedInstance().tellSystemEndCall(callUUID);
+        }
+    }));
+
+    //
+    //  Handle signal: didStartOutgoingCall.
+    //
+    slotConnections.emplace_back(platformCallManager.didStartOutgoingCall.connect([this](const std::string &callUUID) {
+        auto outgoingCall = findOutgoingCall(callUUID);
+        if (outgoingCall) {
+            outgoingCall->start();
+        } else {
+            PlatformCallManager::sharedInstance().tellSystemEndCall(callUUID);
+        }
+    }));
+
+    //
+    //  Handle signal: didEndCall.
+    //
+    slotConnections.emplace_back(platformCallManager.didEndCall.connect([this](const std::string &callUUID) {
+        auto call = findCall(callUUID);
+        if (call) {
+            // TODO: Maybe log this event.
+        }
+    }));
+
+    //
+    //  Handle signal: didFailStartCall.
+    //
+    slotConnections.emplace_back(platformCallManager.didFailStartCall.connect(
+            [this](const std::string &callUUID, const std::string &details) {
+                // TODO: log error details.
+                (void)details;
+                auto call = findCall(callUUID);
+                if (call) {
+                    call->die(CallError::FailedToStartSystemCall);
+                }
+            }));
+
+
+    //
+    //  Handle signal: didRequestCallStart.
+    //
+    slotConnections.emplace_back(platformCallManager.didRequestCallStart.connect(
+            [this](const std::string &callUUID, const std::string &callee) {
+                this->startOutgoingCallFromSystem(callUUID, callee);
+            }));
+
+    //
+    //  Handle signal: didRequestCallAnswer.
+    //
+    slotConnections.emplace_back(platformCallManager.didRequestCallAnswer.connect([this](const std::string &callUUID) {
+        auto incomingCall = findIncomingCall(callUUID);
+        if (incomingCall) {
+            incomingCall->answer();
+        } else {
+            PlatformCallManager::sharedInstance().tellSystemEndCall(callUUID);
+        }
+    }));
+
+    //
+    //  Handle signal: didRequestCallEnd.
+    //
+    slotConnections.emplace_back(platformCallManager.didRequestCallEnd.connect([this](const std::string &callUUID) {
+        auto call = findCall(callUUID);
+        if (call) {
+            call->end();
+        }
+    }));
+
+    //
+    //  Handle signal: didRequestCallMute.
+    //
+    slotConnections.emplace_back(
+            platformCallManager.didRequestCallMute.connect([this](const std::string &callUUID, bool onMute) {
+            }));
+
+    //
+    //  Handle signal: didRequestCallHold.
+    //
+    slotConnections.emplace_back(
+            platformCallManager.didRequestCallHold.connect([this](const std::string &callUUID, bool onHold) {
+            }));
+
+    //
+    //  Handle signal: didActivateAudioSession.
+    //
+    slotConnections.emplace_back(platformCallManager.didActivateAudioSession.connect([this]() {
+    }));
+
+    //
+    //  Handle signal: didDeactivateAudioSession.
+    //
+    slotConnections.emplace_back(platformCallManager.didDeactivateAudioSession.connect([this]() {
+    }));
+}
+
+void
 CallManager::connectCall(std::shared_ptr<Call> call) {
     call->started.connect([this, call]() {
         this->callStarted(*call);
@@ -216,6 +368,7 @@ CallManager::connectCall(std::shared_ptr<Call> call) {
     call->ended.connect([this, call](std::optional<CallError> maybeError) {
         this->callEnded(*call, maybeError);
         this->removeCall(call->uuid());
+        PlatformCallManager::sharedInstance().tellSystemEndCall(call->uuid());
     });
 
     call->connectionStateChanged.connect([this, call](CallConnectionState newConnectionState) {

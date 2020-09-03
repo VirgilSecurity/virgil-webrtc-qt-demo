@@ -118,7 +118,14 @@ Q_SIGNALS:
     void
     messageLogged(const QString &);
 
+    void
+    reconnectSignalingServer();
+
+    void
+    sendToSignalingServer(QString message);
+
 private:
+
     void
     logMessage(const QString &message);
 
@@ -129,6 +136,13 @@ private:
     processCallSignalingMessage(const QString &messageString);
 
 private:
+    void
+    onReconnectSignalingServer();
+
+    void
+    onSendToSignalingServer(QString message);
+
+
     void
     onSignalingMessageReceived(const QString &message);
 

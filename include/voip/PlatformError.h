@@ -7,6 +7,8 @@ namespace voip {
 enum class PlatformError {
     FailedJNI,
     FailedPlatformAudio,
+    FailedPlatformCallManager,
+    PlatformCallManager_ApplicationIsNotRegistered,
 };
 
 } // namespace voip

@@ -16,6 +16,7 @@ enum class CallError {
     FailedToParseCallSignalingMessage,
     FailedToParseIceCandidate,
     FailedToSendCallSignalingMessage,
+    FailedToStartSystemCall,
     FailedToConnect,
     NoPeerConnection,
     UuidMismatch

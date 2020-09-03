@@ -30,7 +30,8 @@ namespace nlohmann {
 //
 // virgil::voip::CallOffer.
 //
-template <> struct adl_serializer<virgil::voip::CallOffer> {
+template <>
+struct adl_serializer<virgil::voip::CallOffer> {
     static void
     to_json(json &j, const virgil::voip::CallOffer &t) {
         j[kJsonKey_CallUUID] = t.callUUID();
@@ -53,7 +54,8 @@ template <> struct adl_serializer<virgil::voip::CallOffer> {
 //
 // virgil::voip::CallAnswer.
 //
-template <> struct adl_serializer<virgil::voip::CallAnswer> {
+template <>
+struct adl_serializer<virgil::voip::CallAnswer> {
     static void
     to_json(json &j, const virgil::voip::CallAnswer &t) {
         j[kJsonKey_CallUUID] = t.callUUID();
@@ -74,7 +76,8 @@ template <> struct adl_serializer<virgil::voip::CallAnswer> {
 //
 // virgil::voip::CallReceived.
 //
-template <> struct adl_serializer<virgil::voip::CallReceived> {
+template <>
+struct adl_serializer<virgil::voip::CallReceived> {
     static void
     to_json(json &j, const virgil::voip::CallReceived &t) {
         j[kJsonKey_CallUUID] = t.callUUID();
@@ -93,7 +96,8 @@ template <> struct adl_serializer<virgil::voip::CallReceived> {
 //
 // virgil::voip::CallRejected.
 //
-template <> struct adl_serializer<virgil::voip::CallRejected> {
+template <>
+struct adl_serializer<virgil::voip::CallRejected> {
     static void
     to_json(json &j, const virgil::voip::CallRejected &t) {
         j[kJsonKey_CallUUID] = t.callUUID();
@@ -112,7 +116,8 @@ template <> struct adl_serializer<virgil::voip::CallRejected> {
 //
 // virgil::voip::CallEnded.
 //
-template <> struct adl_serializer<virgil::voip::CallEnded> {
+template <>
+struct adl_serializer<virgil::voip::CallEnded> {
     static void
     to_json(json &j, const virgil::voip::CallEnded &t) {
         j[kJsonKey_CallUUID] = t.callUUID();
@@ -131,7 +136,8 @@ template <> struct adl_serializer<virgil::voip::CallEnded> {
 //
 // virgil::voip::IceCandidate.
 //
-template <> struct adl_serializer<virgil::voip::IceCandidate> {
+template <>
+struct adl_serializer<virgil::voip::IceCandidate> {
     static void
     to_json(json &j, const virgil::voip::IceCandidate &t) {
         j[kJsonKey_CallUUID] = t.callUUID();

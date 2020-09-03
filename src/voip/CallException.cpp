@@ -23,6 +23,7 @@ stringify(CallError callError) {
         CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToParseIceCandidate);
         CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToSendCallSignalingMessage);
         CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToConnect);
+        CASE_ENUM_VALUE_RETURN_STR(CallError::FailedToStartSystemCall);
         CASE_ENUM_VALUE_RETURN_STR(CallError::NoPeerConnection);
         CASE_ENUM_VALUE_RETURN_STR(CallError::UuidMismatch);
     }

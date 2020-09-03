@@ -75,6 +75,9 @@ public:
     end(std::optional<CallError> maybeError = std::optional<CallError>());
 
     void
+    die(CallError error);
+
+    void
     setHoldOn(bool on);
 
     void
@@ -133,9 +136,6 @@ public:
     psigslot::signal<const CallSignalingMessage &> sendSignalingMessage;
 
 protected:
-    void
-    die(CallError error);
-
     void
     changePhase(CallPhase newPhase, std::optional<CallError> maybeError = {}) noexcept;
 
