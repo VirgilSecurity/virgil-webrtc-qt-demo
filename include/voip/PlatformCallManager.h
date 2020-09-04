@@ -73,6 +73,8 @@ public:
 
     psigslot::signal<> didRequestReset;
 
+    psigslot::signal<const std::string &, const std::string &> didRequestCallStart;
+
     psigslot::signal<const std::string &> didRequestCallAnswer;
 
     psigslot::signal<const std::string &> didRequestCallEnd;

@@ -127,6 +127,7 @@ android {
 ios {
     message("* Using settings for iOS.")
     WEBRTC_LIB_SUBDIR = "ios"
+    QMAKE_IOS_DEPLOYMENT_TARGET = 13.0
     QMAKE_INFO_PLIST = $$PWD/ios/Info.plist
     QMAKE_LFLAGS += -force_load $$PWD/3rdparty/WebRTC/ios/lib/libwebrtc_d.a
     QMAKE_OBJECTIVE_CFLAGS += -fobjc-arc
@@ -136,7 +137,8 @@ ios {
             -framework AudioToolbox \
             -framework AVFoundation \
             -framework CoreMedia \
-            -framework CallKit
+            -framework CallKit \
+            -framework Intents
     DEFINES += WEBRTC_MAC WEBRTC_IOS WEBRTC_POSIX WEBRTC_UNIX
     INCLUDEPATH += \
         $$PWD/3rdparty/WebRTC/ios/include/webrtc/sdk/objc/base
@@ -144,6 +146,7 @@ ios {
         src/voip/ios/PlatformAudioIOS.h \
         src/voip/ios/PlatformCallManagerIOS.h
     OBJECTIVE_SOURCES += \
+        ios/AppDelegate.mm \
         src/voip/ios/PlatformAudioIOS.mm \
         src/voip/ios/PlatformCallManagerIOS.mm
 }

@@ -43,6 +43,19 @@ to_utf8(const std::string &str) {
     if (self = [super init]) {
         _platformCallManager = platformCallManager;
         _queue = dispatch_queue_create("call-kit-events-queue", DISPATCH_QUEUE_SERIAL);
+
+        __weak __CallDelegate *weakSelf = self;
+        [[NSNotificationCenter defaultCenter] addObserverForName:@"callFromTheCallList"
+                                                          object:nil
+                                                           queue:nil
+                                                      usingBlock:^(NSNotification *notification) {
+                                                        NSString *callee = notification.object;
+                                                        NSUUID *callUUID = [[NSUUID alloc] init];
+                                                        weakSelf.platformCallManager->didRequestCallStart(
+                                                                objc::to_utf8(callUUID.UUIDString.lowercaseString),
+                                                                objc::to_utf8(callee));
+                                                      }];
+
         return self;
     }
 

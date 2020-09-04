@@ -281,6 +281,13 @@ CallManager::connectPlatformCallManager() {
             }));
 
     //
+    //  Handle signal: didRequestCallStart.
+    //
+    slotConnections.emplace_back(platformCallManager.didRequestCallStart.connect([this](const std::string &callUUID, const std::string &callee) {
+        this->startOutgoingCall(callUUID, callee);
+    }));
+
+    //
     //  Handle signal: didRequestCallAnswer.
     //
     slotConnections.emplace_back(platformCallManager.didRequestCallAnswer.connect([this](const std::string &callUUID) {
