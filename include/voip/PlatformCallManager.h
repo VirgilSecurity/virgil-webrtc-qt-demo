@@ -88,6 +88,9 @@ public:
     psigslot::signal<const std::string &, bool> didRequestCallMute;
 
     psigslot::signal<const std::string &, bool> didRequestCallHold;
+
+    psigslot::signal<bool> didSetSpeakerOn;
+
 };
 
 } // namespace voip

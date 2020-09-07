@@ -154,6 +154,23 @@ EchoCall::EchoCall(QObject *parent)
             });
 
 
+    m_callManager->didSetMicrophoneOn.connect([this](bool on) {
+        this->m_muteAction->setChecked(!on);
+    });
+
+    m_callManager->didSetSpeakerOn.connect([this](bool on) {
+        this->m_speakerAction->setChecked(on);
+    });
+
+    m_callManager->didSetVoiceOn.connect([this](bool on) {
+        this->m_muteVoiceAction->setChecked(!on);
+    });
+
+    m_callManager->didSetHoldOn.connect([this](bool on) {
+        this->m_holdAction->setChecked(on);
+    });
+
+
     //
     //  Adjust UI.
     //

@@ -90,6 +90,15 @@ public:
 
     psigslot::signal<const Call &, const CallSignalingMessage &> sendSignalingMessage;
 
+    psigslot::signal<bool> didSetMicrophoneOn;
+
+    psigslot::signal<bool> didSetSpeakerOn;
+
+    psigslot::signal<bool> didSetVoiceOn;
+
+    psigslot::signal<bool> didSetHoldOn;
+
+
 private:
     void
     connectPlatformCallManager();

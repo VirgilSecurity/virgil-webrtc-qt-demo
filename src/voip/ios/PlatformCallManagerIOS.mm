@@ -42,7 +42,7 @@ public:
     didDeactivateAudioSession(PlatformCallManagerIOS *self, AVAudioSession *audioSession);
 };
 
-@interface __CallDelegate : NSObject <CXProviderDelegate>
+@interface __CallDelegate : NSObject <CXProviderDelegate, RTCAudioSessionDelegate>
 @property(nonatomic, readonly) PlatformCallManagerIOS *_Nonnull platformCallManager;
 @property(nonatomic, readonly) dispatch_queue_t queue;
 @end
@@ -127,6 +127,28 @@ public:
     PlatformCallManagerIOS::DelegateHelper::didDeactivateAudioSession(self.platformCallManager, audioSession);
 }
 
+- (void)audioSessionDidChangeRoute:(RTC_OBJC_TYPE(RTCAudioSession) *)session
+                            reason:(AVAudioSessionRouteChangeReason)reason
+                     previousRoute:(AVAudioSessionRouteDescription *)previousRoute {
+
+    (void)reason;
+
+    for (AVAudioSessionPortDescription *portDescription in session.currentRoute.outputs) {
+        if ([portDescription.portType isEqualToString:AVAudioSessionPortBuiltInSpeaker]) {
+            self.platformCallManager->didSetSpeakerOn(true);
+            return;
+        }
+    }
+
+    for (AVAudioSessionPortDescription *portDescription in previousRoute.outputs) {
+        if ([portDescription.portType isEqualToString:AVAudioSessionPortBuiltInSpeaker]) {
+            self.platformCallManager->didSetSpeakerOn(false);
+            return;
+        }
+    }
+}
+
+
 @end
 
 // --------------------------------------------------------------------------
@@ -183,6 +205,10 @@ PlatformCallManagerIOS::DelegateHelper::didDeactivateAudioSession(
 PlatformCallManagerIOS::PlatformCallManagerIOS() : impl_(std::make_unique<Impl>()) {
 }
 
+PlatformCallManagerIOS::~PlatformCallManagerIOS() noexcept {
+    [impl_->audioSession removeDelegate:impl_->callDelegate];
+}
+
 void
 PlatformCallManagerIOS::tellSystemRegisterApplication(const std::string &appName) {
     bool isRegisteredExpected = false;
@@ -209,6 +235,7 @@ PlatformCallManagerIOS::tellSystemRegisterApplication(const std::string &appName
     impl_->callDelegate = [[__CallDelegate alloc] initWithThis:this];
     impl_->callProvider = [[CXProvider alloc] initWithConfiguration:configuration];
     [impl_->callProvider setDelegate:impl_->callDelegate queue:impl_->callDelegate.queue];
+    [impl_->audioSession addDelegate:impl_->callDelegate];
 
     //
     //  Create CXCallController.

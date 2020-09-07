@@ -193,6 +193,8 @@ CallManager::setMicrophoneOn(bool on) {
     for (const auto &call : calls_) {
         call->setMicrophoneOn(on);
     }
+
+    this->didSetMicrophoneOn(on);
 }
 
 void
@@ -200,6 +202,8 @@ CallManager::setVoiceOn(bool on) {
     for (const auto &call : calls_) {
         call->setVoiceOn(on);
     }
+
+    this->didSetVoiceOn(on);
 }
 
 bool
@@ -210,6 +214,8 @@ CallManager::hasSpeaker() const {
 void
 CallManager::setSpeakerOn(bool on) {
     platformAudio_->setSpeakerOn(on);
+
+    this->didSetSpeakerOn(on);
 }
 
 void
@@ -217,6 +223,8 @@ CallManager::setHoldOn(bool on) {
     for (const auto &call : calls_) {
         call->setHoldOn(on);
     }
+
+    this->didSetHoldOn(on);
 }
 
 void
@@ -350,6 +358,13 @@ CallManager::connectPlatformCallManager() {
     //  Handle signal: didRequestStopPlayback.
     //
     slotConnections.emplace_back(platformCallManager.didRequestStopPlayback.connect([this]() {
+    }));
+
+    //
+    //  Handle signal: didSetSpeakerOn.
+    //
+    slotConnections.emplace_back(platformCallManager.didSetSpeakerOn.connect([this](bool on) {
+        this->didSetSpeakerOn(on);
     }));
 }
 

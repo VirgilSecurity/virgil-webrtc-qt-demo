@@ -48,6 +48,7 @@ public:
 
 private:
     PlatformCallManagerIOS();
+    ~PlatformCallManagerIOS() noexcept;
     friend PlatformCallManager &
     PlatformCallManager::sharedInstance();
 
