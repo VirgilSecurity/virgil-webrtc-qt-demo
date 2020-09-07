@@ -68,14 +68,13 @@ private Q_SLOTS:
     onReconnect();
 
 private:
-
     void
     reconnect();
 
 private:
     QQueue<QString> m_queue;
     QPointer<QWebSocket> m_socket;
-    QTimer* m_reconnectTimer;
+    QTimer *m_reconnectTimer;
 };
 
 #endif // SIGNALING_SERVER_H_INCLUDED

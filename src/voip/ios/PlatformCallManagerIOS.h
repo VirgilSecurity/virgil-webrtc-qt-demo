@@ -53,6 +53,7 @@ private:
     PlatformCallManager::sharedInstance();
 
     friend class DelegateHelper;
+
 private:
     class Impl;
     std::shared_ptr<Impl> impl_;
