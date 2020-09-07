@@ -11,6 +11,10 @@
 #import <CallKit/CallKit.h>
 
 
+constexpr const char kFailedCallUUID[] = "00000000-00000000-00000000-00000000";
+constexpr const char kFailedCallCaller[] = "failed call";
+
+
 using namespace virgil::voip;
 
 // --------------------------------------------------------------------------
@@ -98,8 +102,10 @@ public:
 - (void)provider:(CXProvider *)provider performEndCallAction:(CXEndCallAction *)action {
     (void)provider;
     std::string callUUID = objc::to_utf8(action.callUUID.UUIDString.lowercaseString);
-    self.platformCallManager->didRequestCallEnd(callUUID);
-    self.platformCallManager->didEndCall(callUUID);
+    if (callUUID != kFailedCallUUID) {
+        self.platformCallManager->didRequestCallEnd(callUUID);
+        self.platformCallManager->didEndCall(callUUID);
+    }
     [action fulfill];
 }
 
@@ -261,7 +267,11 @@ PlatformCallManagerIOS::tellSystemStartIncomingCall(const std::string &callUUID,
                                  if (auto impl = weakImpl.lock()) {
                                      auto callUUID = objc::to_utf8(uuid.UUIDString.lowercaseString);
                                      if (!error) {
-                                         impl->callDelegate.platformCallManager->didStartIncomingCall(callUUID);
+                                         if (callUUID != kFailedCallUUID) {
+                                             impl->callDelegate.platformCallManager->didStartIncomingCall(callUUID);
+                                         } else {
+                                             tellSystemEndCall(kFailedCallUUID);
+                                         }
 
                                      } else {
                                          auto description = objc::to_utf8([error localizedDescription]);
@@ -328,16 +338,22 @@ PlatformCallManagerIOS::tellSystemEndCall(const std::string &callUUID) {
 void
 PlatformCallManagerIOS::tellSystemDummyIncomingCall() {
     PlatformException::throwIfFalse(impl_->isRegistered, PlatformError::PlatformCallManager_ApplicationIsNotRegistered);
+
+    tellSystemStartIncomingCall(kFailedCallUUID, kFailedCallCaller);
 }
 
 void
 PlatformCallManagerIOS::tellSystemMuteCall(const std::string &callUUID, bool onMute) {
     PlatformException::throwIfFalse(impl_->isRegistered, PlatformError::PlatformCallManager_ApplicationIsNotRegistered);
+
+    // FIXME: Implement!
 }
 
 void
 PlatformCallManagerIOS::tellSystemHoldCall(const std::string &callUUID, bool onHold) {
     PlatformException::throwIfFalse(impl_->isRegistered, PlatformError::PlatformCallManager_ApplicationIsNotRegistered);
+
+    // FIXME: Implement!
 }
 
 bool
