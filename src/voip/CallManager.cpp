@@ -38,6 +38,10 @@ CallManager::startOutgoingCall(std::string callUUID, std::string callee) {
 
     this->callCreated(*outgoingCall);
 
+    if (calls_.size() == 1) {
+        PlatformCallManager::sharedInstance().tellSystemConfigureAudioSession();
+    }
+
     PlatformCallManager::sharedInstance().tellSystemStartOutgoingCall(outgoingCall->uuid(), outgoingCall->otherName());
 }
 
@@ -50,6 +54,10 @@ CallManager::startIncomingCall(const CallOffer &callOffer) {
     calls_.push_back(incomingCall);
 
     this->callCreated(*incomingCall);
+
+    if (calls_.size() == 1) {
+        PlatformCallManager::sharedInstance().tellSystemConfigureAudioSession();
+    }
 
     PlatformCallManager::sharedInstance().tellSystemStartIncomingCall(incomingCall->uuid(), incomingCall->otherName());
 }
@@ -102,6 +110,10 @@ CallManager::removeCall(const std::string &uuid) {
     std::remove_if(std::begin(calls_), std::end(calls_), [&uuid](const auto &call) {
         return call->uuid() == uuid;
     });
+
+    if (calls_.empty()) {
+        PlatformCallManager::sharedInstance().tellSystemRestoreAudioSession();
+    }
 }
 
 void
@@ -212,6 +224,8 @@ CallManager::terminateAllCalls() {
     for (auto &call : calls_) {
         call->end();
     }
+
+    PlatformCallManager::sharedInstance().tellSystemRestoreAudioSession();
 }
 
 void
@@ -315,6 +329,7 @@ CallManager::connectPlatformCallManager() {
     //
     slotConnections.emplace_back(
             platformCallManager.didRequestCallMute.connect([this](const std::string &callUUID, bool onMute) {
+                this->setMicrophoneOn(!onMute);
             }));
 
     //
@@ -322,18 +337,19 @@ CallManager::connectPlatformCallManager() {
     //
     slotConnections.emplace_back(
             platformCallManager.didRequestCallHold.connect([this](const std::string &callUUID, bool onHold) {
+                this->setHoldOn(onHold);
             }));
 
     //
-    //  Handle signal: didActivateAudioSession.
+    //  Handle signal: didAllowStartPlayback.
     //
-    slotConnections.emplace_back(platformCallManager.didActivateAudioSession.connect([this]() {
+    slotConnections.emplace_back(platformCallManager.didAllowStartPlayback.connect([this]() {
     }));
 
     //
-    //  Handle signal: didDeactivateAudioSession.
+    //  Handle signal: didRequestStopPlayback.
     //
-    slotConnections.emplace_back(platformCallManager.didDeactivateAudioSession.connect([this]() {
+    slotConnections.emplace_back(platformCallManager.didRequestStopPlayback.connect([this]() {
     }));
 }
 

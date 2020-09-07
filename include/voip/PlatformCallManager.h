@@ -54,14 +54,20 @@ public:
     virtual void
     tellSystemHoldCall(const std::string &callUUID, bool onHold) = 0;
 
+    virtual bool
+    tellSystemConfigureAudioSession() = 0;
+
+    virtual bool
+    tellSystemRestoreAudioSession() = 0;
+
     virtual ~PlatformCallManager() noexcept = default;
 
 public:
     psigslot::signal<> isReady;
 
-    psigslot::signal<> didActivateAudioSession;
+    psigslot::signal<> didAllowStartPlayback;
 
-    psigslot::signal<> didDeactivateAudioSession;
+    psigslot::signal<> didRequestStopPlayback;
 
     psigslot::signal<const std::string &> didStartIncomingCall;
 

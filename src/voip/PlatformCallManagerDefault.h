@@ -35,6 +35,12 @@ public:
 
     virtual void
     tellSystemHoldCall(const std::string &callUUID, bool onHold) override;
+
+    virtual bool
+    tellSystemConfigureAudioSession() override;
+
+    virtual bool
+    tellSystemRestoreAudioSession() override;
 };
 
 } // namespace voip

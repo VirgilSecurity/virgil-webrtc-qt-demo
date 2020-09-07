@@ -33,6 +33,15 @@ to_utf8(const std::string &str) {
 // --------------------------------------------------------------------------
 //  Route CXProviderDelegate -> to the PlatformCallManager signals.
 // --------------------------------------------------------------------------
+class PlatformCallManagerIOS::DelegateHelper {
+public:
+    static void
+    didActivateAudioSession(PlatformCallManagerIOS *self, AVAudioSession *audioSession);
+
+    static void
+    didDeactivateAudioSession(PlatformCallManagerIOS *self, AVAudioSession *audioSession);
+};
+
 @interface __CallDelegate : NSObject <CXProviderDelegate>
 @property(nonatomic, readonly) PlatformCallManagerIOS *_Nonnull platformCallManager;
 @property(nonatomic, readonly) dispatch_queue_t queue;
@@ -107,6 +116,17 @@ to_utf8(const std::string &str) {
     self.platformCallManager->didRequestCallMute(callUUID, action.isMuted);
     [action fulfill];
 }
+
+- (void)provider:(CXProvider *)provider didActivateAudioSession:(AVAudioSession *)audioSession {
+    (void)provider;
+    PlatformCallManagerIOS::DelegateHelper::didActivateAudioSession(self.platformCallManager, audioSession);
+}
+
+- (void)provider:(CXProvider *)provider didDeactivateAudioSession:(AVAudioSession *)audioSession {
+    (void)provider;
+    PlatformCallManagerIOS::DelegateHelper::didDeactivateAudioSession(self.platformCallManager, audioSession);
+}
+
 @end
 
 // --------------------------------------------------------------------------
@@ -129,6 +149,33 @@ public:
     __CallDelegate *callDelegate = nullptr;
     std::atomic_bool isRegistered = false;
 };
+
+// --------------------------------------------------------------------------
+//  Delegate helper implementation.
+// --------------------------------------------------------------------------
+void
+PlatformCallManagerIOS::DelegateHelper::didActivateAudioSession(
+        PlatformCallManagerIOS *self,
+        AVAudioSession *audioSession) {
+
+    [self->impl_->audioSession audioSessionDidActivate:audioSession];
+
+    self->impl_->audioSession.isAudioEnabled = YES;
+
+    self->didAllowStartPlayback();
+}
+
+void
+PlatformCallManagerIOS::DelegateHelper::didDeactivateAudioSession(
+        PlatformCallManagerIOS *self,
+        AVAudioSession *audioSession) {
+
+    self->didRequestStopPlayback();
+
+    self->impl_->audioSession.isAudioEnabled = NO;
+
+    [self->impl_->audioSession audioSessionDidDeactivate:audioSession];
+}
 
 // --------------------------------------------------------------------------
 //  PlatformCallManagerIOS
@@ -264,4 +311,68 @@ PlatformCallManagerIOS::tellSystemMuteCall(const std::string &callUUID, bool onM
 void
 PlatformCallManagerIOS::tellSystemHoldCall(const std::string &callUUID, bool onHold) {
     PlatformException::throwIfFalse(impl_->isRegistered, PlatformError::PlatformCallManager_ApplicationIsNotRegistered);
+}
+
+bool
+PlatformCallManagerIOS::tellSystemConfigureAudioSession() {
+    [impl_->audioSession lockForConfiguration];
+
+    auto _ = ScopeGuard([this] {
+        [impl_->audioSession unlockForConfiguration];
+    });
+
+    NSError *error = NULL;
+
+    [impl_->audioSession setCategory:AVAudioSessionCategoryPlayAndRecord
+                         withOptions:AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
+                               error:&error];
+
+    if (error) {
+        NSLog(@"PlatformCallManagerIOS: failed to configure audio session. Error: %@.", error);
+        return false;
+    }
+
+    [impl_->audioSession setMode:AVAudioSessionModeVideoChat error:&error];
+
+    if (error) {
+        NSLog(@"PlatformCallManagerIOS: failed to configure audio session. Error: %@.", error);
+        return false;
+    }
+
+    impl_->audioSession.useManualAudio = YES;
+    impl_->audioSession.isAudioEnabled = NO;
+
+    return true;
+}
+
+bool
+PlatformCallManagerIOS::tellSystemRestoreAudioSession() {
+    [impl_->audioSession lockForConfiguration];
+
+    auto _ = ScopeGuard([this] {
+        [impl_->audioSession unlockForConfiguration];
+    });
+
+    NSError *error = NULL;
+
+    [impl_->audioSession setCategory:AVAudioSessionCategoryPlayAndRecord
+                         withOptions:AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
+                               error:&error];
+
+    if (error) {
+        NSLog(@"PlatformCallManagerIOS: failed to configure audio session. Error: %@.", error);
+        return false;
+    }
+
+    [impl_->audioSession setMode:AVAudioSessionModeVideoChat error:&error];
+
+    if (error) {
+        NSLog(@"PlatformCallManagerIOS: failed to configure audio session. Error: %@.", error);
+        return false;
+    }
+
+    impl_->audioSession.useManualAudio = NO;
+    impl_->audioSession.isAudioEnabled = NO;
+
+    return true;
 }

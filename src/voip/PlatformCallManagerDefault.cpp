@@ -49,3 +49,13 @@ void
 PlatformCallManagerDefault::tellSystemHoldCall(const std::string &callUUID, bool onHold) {
     // FIXME: What to do here?
 }
+
+bool
+PlatformCallManagerDefault::tellSystemConfigureAudioSession() {
+    return true;
+}
+
+bool
+PlatformCallManagerDefault::tellSystemRestoreAudioSession() {
+    return true;
+}

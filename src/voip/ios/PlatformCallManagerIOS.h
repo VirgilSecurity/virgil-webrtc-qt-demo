@@ -13,6 +13,9 @@ namespace voip {
 //
 class PlatformCallManagerIOS : public PlatformCallManager {
 public:
+    class DelegateHelper;
+
+public:
     virtual void
     tellSystemRegisterApplication(const std::string &appName) override;
 
@@ -37,11 +40,18 @@ public:
     virtual void
     tellSystemHoldCall(const std::string &callUUID, bool onHold) override;
 
+    virtual bool
+    tellSystemConfigureAudioSession() override;
+
+    virtual bool
+    tellSystemRestoreAudioSession() override;
+
 private:
     PlatformCallManagerIOS();
     friend PlatformCallManager &
     PlatformCallManager::sharedInstance();
 
+    friend class DelegateHelper;
 private:
     class Impl;
     std::shared_ptr<Impl> impl_;

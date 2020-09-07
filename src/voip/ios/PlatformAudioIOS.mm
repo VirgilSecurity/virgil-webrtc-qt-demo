@@ -30,7 +30,9 @@ PlatformAudioIOS::setSpeakerOn(bool on) {
         [rtcAudioSession_ unlockForConfiguration];
     });
 
+#if DEBUG
     NSLog(@"PlatformAudioIOS: set speaker %@.", on ? @"on" : @"off");
+#endif
 
     NSError *error = NULL;
 
