@@ -42,13 +42,13 @@ SignalingServer::onProcessQuedMessages() {
         return;
     }
 
-    auto message = m_queue.front();
-    auto sentBytes = m_socket->sendTextMessage(message);
-    m_queue.pop_front();
-
-    qDebug() << QString("Sent %1 bytes to the socket").arg(sentBytes);
+    for(const auto& message : m_queue) {
+        auto sentBytes = m_socket->sendTextMessage(message);
+        qDebug() << QString("Sent %1 bytes to the socket").arg(sentBytes);
+    }
 
     m_socket->flush();
+    m_queue.clear();
 }
 
 void
