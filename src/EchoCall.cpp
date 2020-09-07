@@ -1,16 +1,20 @@
 #include "EchoCall.h"
 
+#include "SignalingServer.h"
+
+#include <voip/CallOffer.h>
+#include <voip/CallAnswer.h>
+#include <voip/IceCandidate.h>
+
 #include <QDebug>
 #include <QJsonObject>
 #include <QJsonDocument>
 
 #include <stdexcept>
 
-#include <voip/CallOffer.h>
-#include <voip/CallAnswer.h>
-#include <voip/IceCandidate.h>
 
 namespace voip = virgil::voip;
+
 
 static std::string
 generateUniqueId() {
@@ -20,6 +24,8 @@ generateUniqueId() {
 EchoCall::EchoCall(QObject *parent)
     : QObject(parent),
       m_callManager(std::make_unique<voip::CallManager>(generateUniqueId(), "Virgil")),
+      m_activeCallUuid(),
+      m_signalingServerThread(),
       m_callAction(new Action(this)),
       m_answerAction(new Action(this)),
       m_endAction(new Action(this)),
@@ -156,17 +162,27 @@ EchoCall::EchoCall(QObject *parent)
     m_endAction->setEnabled(false);
 
     //
-    //  Init socket.
+    //  Connect Signaling Message Transiver.
     //
-    connect(this, &EchoCall::reconnectSignalingServer, this, &EchoCall::onReconnectSignalingServer);
-    connect(this, &EchoCall::sendToSignalingServer, this, &EchoCall::onSendToSignalingServer);
-    connect(&m_socket, &QWebSocket::connected, this, &EchoCall::onSocketConnected);
-    connect(&m_socket, &QWebSocket::disconnected, this, &EchoCall::onSocketDisconnected);
-    connect(&m_socket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error), this, &EchoCall::onSocketError);
 
-    Q_EMIT reconnectSignalingServer();
+    SignalingServer *signalingServer = new SignalingServer{};
+    signalingServer->moveToThread(&m_signalingServerThread);
+
+    connect(signalingServer, &SignalingServer::connecting, this, &EchoCall::onSignalingServerConnecting);
+    connect(signalingServer, &SignalingServer::connected, this, &EchoCall::onSignalingServerConnected);
+    connect(signalingServer, &SignalingServer::disconnected, this, &EchoCall::onSignalingServerDisconnected);
+    connect(signalingServer, &SignalingServer::messageReceived, this, &EchoCall::onSignalingServerMessageReceived);
+
+    connect(this, &EchoCall::sendSignalingMessage, signalingServer, &SignalingServer::sendMessage);
+
+    m_signalingServerThread.start();
+    signalingServer->start();
 }
 
+EchoCall::~EchoCall() noexcept {
+    m_signalingServerThread.quit();
+    m_signalingServerThread.wait();
+}
 
 void
 EchoCall::call() {
@@ -265,7 +281,6 @@ EchoCall::logMessage(const QString &message) {
 
 void
 EchoCall::sendCallSignalingMessage(const voip::CallSignalingMessage &message) {
-
     //
     //  Serialize message.
     //
@@ -274,7 +289,7 @@ EchoCall::sendCallSignalingMessage(const voip::CallSignalingMessage &message) {
     //
     //  Send message.
     //
-    Q_EMIT sendToSignalingServer(QString::fromStdString(messageStr));
+    Q_EMIT sendSignalingMessage(QString::fromStdString(messageStr));
 }
 
 void
@@ -290,41 +305,22 @@ EchoCall::processCallSignalingMessage(const QString &messageString) {
 }
 
 void
-EchoCall::onReconnectSignalingServer() {
-    logMessage("Connecting to the signaling server...");
-    qDebug() << "Connecting to the signaling server...";
-    m_socket.abort();
-    m_socket.abort();
-    m_socket.open(QUrl("ws://165.232.68.63:8080"));
+EchoCall::onSignalingServerConnecting() {
+    logMessage("Connecting to the signaling server.");
 }
 
 void
-EchoCall::onSendToSignalingServer(QString message) {
-    auto sentBytes = m_socket.sendTextMessage(message);
-    qDebug() << QString("Sent %1 bytes to the socket").arg(sentBytes);
-    m_socket.flush();
+EchoCall::onSignalingServerConnected() {
+    logMessage("Connected to the signaling server.");
 }
 
 void
-EchoCall::onSignalingMessageReceived(const QString &message) {
+EchoCall::onSignalingServerDisconnected() {
+    logMessage("Disconnected from the signaling server.");
+}
+
+void
+EchoCall::onSignalingServerMessageReceived(const QString &message) {
     logMessage("Got signaling message.");
     processCallSignalingMessage(message);
-}
-
-void
-EchoCall::onSocketConnected() {
-    logMessage("Connected to the signaling server.");
-    connect(&m_socket, &QWebSocket::textMessageReceived, this, &EchoCall::onSignalingMessageReceived);
-}
-
-void
-EchoCall::onSocketDisconnected() {
-    logMessage("Disconnected from the signaling server.");
-    disconnect(&m_socket, &QWebSocket::textMessageReceived, this, &EchoCall::onSignalingMessageReceived);
-}
-
-void
-EchoCall::onSocketError(QAbstractSocket::SocketError error) {
-    logMessage(QString("Signaling server connection failed with socket error %1.").arg(int(error)));
-    Q_EMIT reconnectSignalingServer();
 }

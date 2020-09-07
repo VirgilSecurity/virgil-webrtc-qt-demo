@@ -1,14 +1,17 @@
 #ifndef ECHO_CALL_H_INCLUDED
 #define ECHO_CALL_H_INCLUDED
 
+#include <voip/CallManager.h>
+#include <sigslot/signal.hpp>
+
 #include <QObject>
 #include <QtWebSockets/QWebSocket>
 #include <QUuid>
+#include <QThread>
+
 
 #include <memory>
-
-#include <voip/CallManager.h>
-#include <sigslot/signal.hpp>
+#include <mutex>
 
 class Action : public QObject {
     Q_OBJECT
@@ -92,6 +95,7 @@ class EchoCall : public QObject {
 
 public:
     explicit EchoCall(QObject *parent);
+    ~EchoCall() noexcept;
 
     void
     call();
@@ -119,13 +123,9 @@ Q_SIGNALS:
     messageLogged(const QString &);
 
     void
-    reconnectSignalingServer();
-
-    void
-    sendToSignalingServer(QString message);
+    sendSignalingMessage(const QString &message);
 
 private:
-
     void
     logMessage(const QString &message);
 
@@ -135,30 +135,22 @@ private:
     void
     processCallSignalingMessage(const QString &messageString);
 
-private:
     void
-    onReconnectSignalingServer();
+    onSignalingServerConnecting();
 
     void
-    onSendToSignalingServer(QString message);
-
-
-    void
-    onSignalingMessageReceived(const QString &message);
+    onSignalingServerConnected();
 
     void
-    onSocketConnected();
+    onSignalingServerDisconnected();
 
     void
-    onSocketDisconnected();
-
-    void
-    onSocketError(QAbstractSocket::SocketError error);
+    onSignalingServerMessageReceived(const QString &message);
 
 private:
     std::unique_ptr<virgil::voip::CallManager> m_callManager;
     std::string m_activeCallUuid;
-    QWebSocket m_socket;
+    QThread m_signalingServerThread;
 
     Action *m_callAction;
     Action *m_answerAction;

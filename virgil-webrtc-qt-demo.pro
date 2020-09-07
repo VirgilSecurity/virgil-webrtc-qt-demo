@@ -12,6 +12,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += \
     include/EchoCall.h \
+    include/SignalingServer.h \
     include/utils/ScopedGuard.h \
     include/voip/Call.h \
     include/voip/CallAnswer.h \
@@ -38,6 +39,7 @@ HEADERS += \
 
 SOURCES += \
     src/EchoCall.cpp \
+    src/SignalingServer.cpp \
     src/main.cpp \
     src/queue/dispatch_queue.cpp \
     src/voip/Call.cpp \
