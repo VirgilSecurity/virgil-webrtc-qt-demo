@@ -4,6 +4,8 @@
 #include "ScopeGuard.h"
 
 #include <webrtc/sdk/objc/components/audio/RTCAudioSession.h>
+#include <webrtc/sdk/objc/components/audio/RTCAudioSessionConfiguration.h>
+#include <webrtc/sdk/objc/base/RTCLogging.h>
 
 #include <atomic>
 
@@ -137,20 +139,19 @@ public:
                             reason:(AVAudioSessionRouteChangeReason)reason
                      previousRoute:(AVAudioSessionRouteDescription *)previousRoute {
 
-    (void)reason;
+    auto previousRouteType = previousRoute.outputs.lastObject.portType;
+    auto currentRouteType = session.currentRoute.outputs.lastObject.portType;
 
-    for (AVAudioSessionPortDescription *portDescription in session.currentRoute.outputs) {
-        if ([portDescription.portType isEqualToString:AVAudioSessionPortBuiltInSpeaker]) {
-            self.platformCallManager->didSetSpeakerOn(true);
-            return;
-        }
-    }
+    RTCLogDebug(@"Audio route changed: %@ -> %@", previousRouteType, currentRouteType);
 
-    for (AVAudioSessionPortDescription *portDescription in previousRoute.outputs) {
-        if ([portDescription.portType isEqualToString:AVAudioSessionPortBuiltInSpeaker]) {
-            self.platformCallManager->didSetSpeakerOn(false);
-            return;
-        }
+    if ([currentRouteType isEqualToString:AVAudioSessionPortBuiltInSpeaker] &&
+        ![previousRouteType isEqualToString:AVAudioSessionPortBuiltInSpeaker]) {
+        self.platformCallManager->didSetSpeakerOn(true);
+
+    } else if (
+            [previousRouteType isEqualToString:AVAudioSessionPortBuiltInSpeaker] &&
+            ![currentRouteType isEqualToString:AVAudioSessionPortBuiltInSpeaker]) {
+        self.platformCallManager->didSetSpeakerOn(false);
     }
 }
 
@@ -171,10 +172,11 @@ PlatformCallManager::sharedInstance() {
 // --------------------------------------------------------------------------
 class PlatformCallManagerIOS::Impl {
 public:
-    RTC_OBJC_TYPE(RTCAudioSession) *audioSession = nullptr;
-    CXProvider *callProvider = nullptr;
-    CXCallController *callController = nullptr;
-    __CallDelegate *callDelegate = nullptr;
+    RTC_OBJC_TYPE(RTCAudioSession) *audioSession = nil;
+    RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *originAudioSessionConfiguration = nil;
+    CXProvider *callProvider = nil;
+    CXCallController *callController = nil;
+    __CallDelegate *callDelegate = nil;
     std::atomic_bool isRegistered = false;
 };
 
@@ -241,12 +243,16 @@ PlatformCallManagerIOS::tellSystemRegisterApplication(const std::string &appName
     impl_->callDelegate = [[__CallDelegate alloc] initWithThis:this];
     impl_->callProvider = [[CXProvider alloc] initWithConfiguration:configuration];
     [impl_->callProvider setDelegate:impl_->callDelegate queue:impl_->callDelegate.queue];
-    [impl_->audioSession addDelegate:impl_->callDelegate];
 
     //
     //  Create CXCallController.
     //
     impl_->callController = [[CXCallController alloc] init];
+
+    //
+    //  Configure RTCAudioSession
+    //
+    [impl_->audioSession addDelegate:impl_->callDelegate];
 }
 
 void
@@ -323,16 +329,17 @@ PlatformCallManagerIOS::tellSystemEndCall(const std::string &callUUID) {
     auto transaction = [[CXTransaction alloc] init];
     [transaction addAction:endCallAction];
     std::weak_ptr<Impl> weakImpl{impl_};
-    [impl_->callController requestTransaction:transaction
-                                   completion:^(NSError *_Nullable error) {
-                                     if (auto impl = weakImpl.lock()) {
-                                         auto callUUID = objc::to_utf8(uuid.UUIDString.lowercaseString);
-                                         impl->callDelegate.platformCallManager->didEndCall(callUUID);
-                                         if (error) {
-                                             NSLog(@"PlatformCallManagerIOS: Error: %@ %@", error, [error userInfo]);
-                                         }
-                                     }
-                                   }];
+    [impl_->callController
+            requestTransaction:transaction
+                    completion:^(NSError *_Nullable error) {
+                      if (auto impl = weakImpl.lock()) {
+                          auto callUUID = objc::to_utf8(uuid.UUIDString.lowercaseString);
+                          impl->callDelegate.platformCallManager->didEndCall(callUUID);
+                          if (error) {
+                              RTCLogError(@"Failed to request a call transaction: %@", error.localizedDescription);
+                          }
+                      }
+                    }];
 }
 
 void
@@ -358,27 +365,47 @@ PlatformCallManagerIOS::tellSystemHoldCall(const std::string &callUUID, bool onH
 
 bool
 PlatformCallManagerIOS::tellSystemConfigureAudioSession() {
+    //
+    //  Store origin AudioSession configuration.
+    //
+    impl_->originAudioSessionConfiguration = [[RTC_OBJC_TYPE(RTCAudioSessionConfiguration) alloc] init];
+
+    impl_->originAudioSessionConfiguration.mode = impl_->audioSession.mode;
+    impl_->originAudioSessionConfiguration.category = impl_->audioSession.category;
+    impl_->originAudioSessionConfiguration.categoryOptions = impl_->audioSession.categoryOptions;
+
+    RTCLogDebug(
+            @"Stored origin configuration: mode = %@, category = %@, categoryOptions = %lu ",
+            impl_->originAudioSessionConfiguration.mode,
+            impl_->originAudioSessionConfiguration.category,
+            impl_->originAudioSessionConfiguration.categoryOptions);
+
+    //
+    //  Apply new configuration.
+    //
+    RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *configuration =
+            [[RTC_OBJC_TYPE(RTCAudioSessionConfiguration) alloc] init];
+
+    configuration.category = AVAudioSessionCategoryPlayAndRecord;
+    configuration.categoryOptions = AVAudioSessionCategoryOptionDuckOthers;
+    configuration.mode = AVAudioSessionModeDefault;
+
     [impl_->audioSession lockForConfiguration];
 
     auto _ = ScopeGuard([this] {
         [impl_->audioSession unlockForConfiguration];
     });
 
-    NSError *error = NULL;
+    NSError *error = nil;
 
-    [impl_->audioSession setCategory:AVAudioSessionCategoryPlayAndRecord
-                         withOptions:AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
-                               error:&error];
-
-    if (error) {
-        NSLog(@"PlatformCallManagerIOS: failed to configure audio session. Error: %@.", error);
-        return false;
+    if (impl_->audioSession.isActive) {
+        [impl_->audioSession setConfiguration:configuration error:&error];
+    } else {
+        [impl_->audioSession setConfiguration:configuration active:YES error:&error];
     }
 
-    [impl_->audioSession setMode:AVAudioSessionModeVideoChat error:&error];
-
     if (error) {
-        NSLog(@"PlatformCallManagerIOS: failed to configure audio session. Error: %@.", error);
+        RTCLogError(@"Failed to configure audio session: %@", error.localizedDescription);
         return false;
     }
 
@@ -396,21 +423,12 @@ PlatformCallManagerIOS::tellSystemRestoreAudioSession() {
         [impl_->audioSession unlockForConfiguration];
     });
 
-    NSError *error = NULL;
+    NSError *error = nil;
 
-    [impl_->audioSession setCategory:AVAudioSessionCategoryPlayAndRecord
-                         withOptions:AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
-                               error:&error];
+    [impl_->audioSession setConfiguration:impl_->originAudioSessionConfiguration active:NO error:&error];
 
     if (error) {
-        NSLog(@"PlatformCallManagerIOS: failed to configure audio session. Error: %@.", error);
-        return false;
-    }
-
-    [impl_->audioSession setMode:AVAudioSessionModeVideoChat error:&error];
-
-    if (error) {
-        NSLog(@"PlatformCallManagerIOS: failed to configure audio session. Error: %@.", error);
+        RTCLogError(@"Failed to configure audio session: %@", error.localizedDescription);
         return false;
     }
 
