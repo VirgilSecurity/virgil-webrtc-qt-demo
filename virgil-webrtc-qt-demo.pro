@@ -92,13 +92,8 @@ macx {
 linux:!android {
     message("* Using settings for Linux.")
     WEBRTC_LIB_SUBDIR = "linux"
-    LIBS += -L$$PWD/3rdparty/WebRTC/linux/lib/x86_64 -lwebrtc_d
-    LIBS += -framework Foundation \
-            -framework CoreServices \
-            -framework ApplicationServices \
-            -framework CoreAudio \
-            -framework AudioToolbox
-    DEFINES += WEBRTC_MAC WEBRTC_POSIX WEBRTC_UNIX
+    LIBS += -L$$PWD/3rdparty/WebRTC/linux/lib/x86_64 -lwebrtc_d -ldl
+    DEFINES += WEBRTC_LINUX WEBRTC_POSIX WEBRTC_UNIX
     HEADERS += \
         src/voip/PlatformAudioWebRtc.h \
         src/voip/PlatformCallManagerDefault.h
