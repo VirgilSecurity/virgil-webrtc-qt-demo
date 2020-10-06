@@ -1,0 +1,5 @@
+<resources>
+    <string name="decline_call">Decline</string>
+    <string name="answer_call">Answer</string>
+    <string name="incoming_secure_call">Incoming secure call</string>
+</resources>

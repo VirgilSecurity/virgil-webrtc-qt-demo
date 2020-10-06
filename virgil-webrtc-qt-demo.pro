@@ -92,7 +92,7 @@ macx {
 linux:!android {
     message("* Using settings for Linux.")
     WEBRTC_LIB_SUBDIR = "linux"
-    LIBS += -L$$PWD/3rdparty/WebRTC/linux/lib/x86_64 -lwebrtc_d -ldl
+    LIBS += -L$$PWD/3rdparty/WebRTC/linux/lib/x86_64 -lwebrtc_d -ldl -lX11
     DEFINES += WEBRTC_LINUX WEBRTC_POSIX WEBRTC_UNIX
     HEADERS += \
         src/voip/PlatformAudioWebRtc.h \
@@ -154,3 +154,5 @@ QMAKE_INCDIR += \
     $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include/webrtc \
     $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include/webrtc/third_party \
     $$PWD/3rdparty/WebRTC/$$WEBRTC_LIB_SUBDIR/include/webrtc/third_party/abseil-cpp
+
+ANDROID_ABIS = armeabi-v7a

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Buttons -->
+    <dimen name="btn_radius">40dp</dimen>
+    <dimen name="btn_drawable_padding">15dp</dimen>
+    <dimen name="btn_padding_bottom">5dp</dimen>
+    <dimen name="btn_padding_left">35dp</dimen>
+    <dimen name="btn_padding_right">35dp</dimen>
+    <dimen name="btn_padding_top">5dp</dimen>
+
+    <!-- Icons -->
+    <dimen name="icon_caller_height">100dp</dimen>
+    <dimen name="icon_caller_width">100dp</dimen>
+
+    <!-- Texts -->
+    <dimen name="text_caller_name_text_size">18sp</dimen>
+
+    <!-- Incoming call layout -->
+    <dimen name="icl_caller_icon_left">50dp</dimen>
+    <dimen name="icl_caller_icon_top">50dp</dimen>
+    <dimen name="icl_decline_btn_left">20dp</dimen>
+    <dimen name="icl_decline_btn_top">96dp</dimen>
+    <dimen name="icl_answer_btn_right">20dp</dimen>
+</resources>

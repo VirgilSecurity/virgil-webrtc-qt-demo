@@ -85,7 +85,20 @@
                 -->
             <meta-data android:name="android.app.extract_android_style" android:value="default"/>
             <!-- extract android style -->
-    </activity>
+        </activity>
+
+        <activity android:name="com.virgilsecurity.voip.IncomingCallActivity"
+                  android:label="-- %%INSERT_APP_NAME%% --"
+                  android:screenOrientation="portrait"
+                  android:launchMode="singleTop"
+                  android:theme="@style/AppTheme">
+            <!--
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            -->
+        </activity>
 
     <!-- For adding service(s) please check: https://wiki.qt.io/AndroidServices -->
 

@@ -1,0 +1,38 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <!-- Buttons -->
+    <style name="AppTheme.RoundedCornerButton" parent="AppTheme">
+        <item name="android:background">@drawable/rounded_button</item>
+        <item name="android:drawablePadding">@dimen/btn_drawable_padding</item>
+        <item name="textAllCaps">false</item>
+    </style>
+
+    <style name="AppTheme.AnswerButton" parent="AppTheme.RoundedCornerButton">
+        <item name="android:background">@drawable/answer_button</item>
+        <item name="android:drawableLeft">@drawable/answer</item>
+    </style>
+
+    <style name="AppTheme.DeclineButton" parent="AppTheme.RoundedCornerButton">
+        <item name="android:background">@drawable/decline_button</item>
+        <item name="android:drawableLeft">@drawable/decline</item>
+    </style>
+
+    <!-- Icons and Images -->
+    <style name="AppTheme.CallerIcon" parent="AppTheme">
+        <item name="android:scaleType">fitXY</item>
+        <item name="android:layout_height">@dimen/icon_caller_height</item>
+        <item name="android:layout_width">@dimen/icon_caller_width</item>
+    </style>
+
+    <!-- Texts -->
+    <style name="AppTheme.CallerName" parent="AppTheme">
+        <item name="android:textSize">@dimen/text_caller_name_text_size</item>
+    </style>
+</resources>
